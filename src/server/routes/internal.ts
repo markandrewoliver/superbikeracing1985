@@ -5,6 +5,7 @@ import { dueNow, syncCrons } from "../cron";
 import { forgetComment, forgetPost } from "../deletions";
 import { chooseKindForm, postKindByValue } from "../postKinds";
 import { createPost } from "../posts";
+import type { PostKindId } from "../../shared/api";
 
 /**
  * Devvit's own entry points: the menu row, the forms behind it, triggers and
@@ -50,8 +51,11 @@ router.post("/internal/forms/choose-kind", async (req, res) => {
   }
 });
 
-/** The example kind's form → the post. */
-router.post("/internal/forms/new-example", async (req, res) => {
+/**
+ * A kind's form → the post. Every "create a post" form ends the same way; the
+ * kind is the only difference, so it is a parameter.
+ */
+async function postFromForm(req: express.Request, res: express.Response, kind: PostKindId) {
   const { subredditName } = context;
   if (!subredditName) {
     console.error("[menu] no subreddit in context");
@@ -64,14 +68,17 @@ router.post("/internal/forms/new-example", async (req, res) => {
     return;
   }
   try {
-    const { url } = await createPost(subredditName, "example", title);
+    const { url } = await createPost(subredditName, kind, title);
     // Navigating to the post is the confirmation.
     res.json({ navigateTo: url });
   } catch (err) {
-    console.error(`[menu] create post failed: ${String(err)}`);
+    console.error(`[menu] create ${kind} post failed: ${String(err)}`);
     res.json({ showToast: `Failed to create post: ${String(err)}` });
   }
-});
+}
+
+router.post("/internal/forms/new-race", (req, res) => postFromForm(req, res, "race"));
+router.post("/internal/forms/new-example", (req, res) => postFromForm(req, res, "example"));
 
 /**
  * Scheduled task. Wakes hourly at its planned minute (see cron.ts) and asks

@@ -1,0 +1,28 @@
+// Traffic and barricade art.
+
+import { png } from './assets.js';
+
+// Traffic sprites: Kenney's pixel vehicles (kenney.nl, CC0), facing right, at 2 screen px per Kenney px. w/h = trimmed size in screen px.
+export const CAR_SPRITES = [
+  { name: 'convertible', hubs: [[8, 22], [36, 22]], w: 64, h: 28, src: png('car-sprites/convertible-src') },
+  { name: 'sports_convertible', hubs: [[10, 20], [42, 20]], w: 66, h: 26, src: png('car-sprites/sports_convertible-src') },
+  { name: 'semi', hubs: [[12, 42], [24, 42], [76, 42], [90, 42], [124, 42]], w: 146, h: 48, src: png('car-sprites/semi-src') },
+  { name: 'sedan', hubs: [[8, 20], [36, 20]], w: 58, h: 26, src: png('car-sprites/sedan-src') },
+  { name: 'taxi', hubs: [[10, 22], [42, 22]], w: 66, h: 28, src: png('car-sprites/taxi-src') },
+  { name: 'police', hubs: [], w: 66, h: 28, src: png('car-sprites/police-src') },
+  { name: 'suv', hubs: [[10, 24], [40, 24]], w: 62, h: 30, src: png('car-sprites/suv-src') },
+  { name: 'van', hubs: [[10, 28], [42, 28]], w: 66, h: 34, src: png('car-sprites/van-src') },
+  { name: 'station', hubs: [[12, 20], [44, 20]], w: 68, h: 26, src: png('car-sprites/station-src') },
+  { name: 'sports_red', hubs: [[10, 18], [42, 18]], w: 66, h: 24, src: png('car-sprites/sports_red-src') },
+  { name: 'rounded_yellow', hubs: [[10, 16], [36, 16]], w: 66, h: 22, src: png('car-sprites/rounded_yellow-src') },
+  { name: 'vintage', hubs: [[14, 18], [42, 18]], w: 72, h: 24, src: png('car-sprites/vintage-src') },
+  { name: 'bus_school', hubs: [[17, 35], [69, 35]], w: 92, h: 42, src: png('car-sprites/bus_school-src') },
+  { name: 'truckdelivery', hubs: [[12, 42], [24, 42], [62, 42]], w: 88, h: 48, src: png('car-sprites/truckdelivery-src') },
+  { name: 'suv_travel', hubs: [[12, 26], [42, 26]], w: 64, h: 32, src: png('car-sprites/suv_travel-src') },
+  { name: 'van_large', hubs: [[14, 32], [46, 32]], w: 70, h: 38, src: png('car-sprites/van_large-src') }
+];
+// barricades across the lanes, drawn from a little 3D model: [lanes][0][frame] = [dx, dy, rows] from the foot of its near end
+// (one fixed lean, 0.4 px left per px of depth; frames: standing, buckling, snapping, wreck). Kenney px; 1 = 2 screen px.
+export const BAR_PAL = {"a": "#ffffff", "b": "#f55c5c", "c": "#c03e41", "d": "#96282c", "e": "#c8e0ff", "f": "#96b0d2"};
+export const BAR_SPR = {"1": [[[-3, -15, ["aaa...", "aaaa..", "bbbb..", "bbbb..", "cbbbb.", "cbbbb.", "ccaaaa", "ccaaaa", "ccaaaa", "dcaaaa", ".caaaa", ".daaaa", "..aaaa", "..aaaa", "..aaaa"]], [-3, -16, [".a........", ".aaaa.....", ".aaaa.....", "aaaaa.....", "aaaaecc...", "aaaacccb..", "aaaccccab.", "aaacccaaa.", "aacccaaaaa", "adccaaaaaa", ".adcacaaaa", "..daaaaaa.", "..daaaaaa.", "...aaaaa..", "...aaaa...", ".....aa..."]], [-2, -16, ["........c.........", "..................", ".....aa...........", "...aaaaa..........", "..aaaabb..bb......", "aaaabbbbabbbb.....", "aabbbbbaabbbbb....", ".bbbbaaaabbbab....", ".bbaaaaa..beaab...", "..aaaa....aaaaab..", "..aa......aaaaaa..", "...........aaaaaa.", "............aaaaa.", ".............abaaa", "..............aaaa", "..............aaa."]], [-6, -11, ["......aaaaaaa.........", "......aaaaaaaa..bbbb..", "......bbbbbbbbbbbbbbb.", "......bbbbbbbbbbbbbbb.", "......aaaaaaabbbbbaaaa", "......aaaaaaadbaaaaaaa", ".............dbaaaaaaa", "..............daaaaaaa", "..............daaaaaaa", "...............aaaaa..", "e.............c....a.."]]]], "2": [[[-7, -24, ["aaaa......", "aaaa......", "aaaa......", "abbbb.....", "abbbb.....", "acbbbb....", "acbbbb....", "acbaaa....", "accaaaa...", ".ccaaaa...", ".dceaaaa..", "..cebbbb..", "..cebbbb..", "..decbbbb.", "...ecbbbb.", "...fccaaaa", "....ccaaaa", "....ccaaaa", "....dcaaaa", ".....caaaa", ".....daaaa", "......aaaa", "......aaaa", "......aaaa"]], [-7, -25, [".a............", ".aaaa.........", ".aaaa.........", ".aabaa........", ".acbbb........", "aacbbbb.......", "aecbbbb.......", "aeccabb.......", "aeccaaaa......", ".cccaaaeea....", ".dccaaeeeea...", "..caaaeeeea...", "..daaeeeccca..", "..daaeeeeccb..", "...afeeccccb..", "...afecccccab.", "....fdccccaaa.", ".....dcccaaaaa", ".....dccaaaaaa", "......dcacaaaa", "......daaaaaa.", "......daaaaaa.", ".......aaaaa..", ".......aaaa...", ".........aa..."]], [-5, -23, ["....aaa..............", "...aaaa..............", ".aaaaaaa.............", "aaaaaabb.............", "aaaabbbb.............", "aabbbbbbb............", ".bbbbbbbb............", ".bbbbbbaac.ca........", ".bbbbaaaaa.aaa.......", "..bbaaaaaaaaaaa......", "..aaaaaaaaaaabaa.....", "...aaaaaa..abbbaa....", "...aaaa....bbbbba....", "....aa......bbbbba...", "............bbbabb...", ".............beaabb..", ".............aaaaab..", ".............aaaaaa..", "..............aaaaaa.", "...............aaaaa.", "................abaaa", ".................aaaa", ".................aaa."]], [-6, -20, ["..aaaaaaaa.............", "..aaaaaaaa.............", "..aaaaaaaa.............", "..fbbbbbbbb............", "..fbbbbbbbb............", "...dbbbbbbbb...........", "...dbbbbbbbb..aaaa.....", "....baaaaaaaaaaaaa.....", "....daaaaaaaaaaaaaa....", "....daaaaaaaaaaabbbb...", ".....aaaaaafabbbbbbb...", "...........fabbbbbbbb..", "............fbbbbbbbbb.", "............fdbbbbaaaa.", ".............dbaaaaaaaa", "..............daaaaaaaa", "..............dfaaaaaaa", "...............faaaaaaa", "................aaaa...", "e.............c....a..."]]]]};
+export const LIGHT_SPR = ["..pppww", ".ppppww", "pw.....", "p......", "p......", "p......", "p......", "p......", "p......", "p......", "p......", "p......", "p......", "p......", "p......", "p......", "p......", "p......", "p......", "p......", "p......", "p......", "p......", "p......", "p......", "p......", "p......"];   // Kenney's streetlight (p pole, w lamp)

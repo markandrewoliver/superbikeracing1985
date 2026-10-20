@@ -12,7 +12,7 @@ export type PostData = { kind: PostKindId };
 
 /** Every post kind this app can create. Add one here, in `POST_KINDS`
  *  (server/postKinds.ts), in devvit.json → forms, and as a route. */
-export type PostKindId = "example";
+export type PostKindId = "race" | "example";
 
 export type InitResponse = {
   postId: string;

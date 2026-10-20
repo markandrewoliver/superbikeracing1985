@@ -1,0 +1,39 @@
+/* Layout: the whole page is the handheld. Screen edge to edge in a slim bezel, a big D-pad underneath. */
+:root{
+  --shell:#cdc8bf; --shell-hi:#dcd7ce; --shell-lo:#bdb7ad; --bezel:#545867; --bezel-d:#3c3f4b;
+  --dpad:#2a2c32; --dpad-hi:#3a3d45; --dpad-lo:#17181c; --label:#2b3a8c; --turbo:#ffcf3a;
+  --display:'Silkscreen',ui-monospace,monospace; --body:'Chakra Petch',system-ui,sans-serif;
+  --dp:clamp(170px,min(64vw,33vh),270px);
+  color-scheme:light;
+}
+html,body{height:100%}
+body{margin:0;background:linear-gradient(180deg,var(--shell-hi),var(--shell) 30%,var(--shell-lo));color:var(--label);font-family:var(--body);-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+.device{box-sizing:border-box;width:100%;max-width:640px;min-height:100%;margin:0 auto;padding:max(10px,env(safe-area-inset-top)) 10px max(14px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
+.bezel{padding:8px 8px 6px;border-radius:10px 10px 28px 10px;background:linear-gradient(180deg,var(--bezel),var(--bezel-d));box-shadow:inset 0 2px 6px rgba(0,0,0,.45),0 1px 0 rgba(255,255,255,.5)}
+.screen{border-radius:3px;overflow:hidden;background:#000;box-shadow:0 0 0 2px #22242b}
+canvas{display:block;width:100%;height:auto;image-rendering:pixelated;touch-action:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.brand{margin:2px 4px 0;font:700 italic clamp(13px,4vw,17px)/1 var(--body);letter-spacing:.02em;color:var(--label);text-transform:uppercase}
+.brand b{font-family:var(--display);font-style:normal;font-weight:700;letter-spacing:.06em}
+.controls{flex:1;display:flex;align-items:center;justify-content:center;padding:4px 0}
+/* D-pad: four arms of one cross */
+.pad{width:var(--dp);height:var(--dp);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;filter:drop-shadow(0 5px 0 rgba(0,0,0,.28)) drop-shadow(0 0 1px rgba(0,0,0,.5))}
+.up{grid-area:1/2}.left{grid-area:2/1}.right{grid-area:2/3}.down{grid-area:3/2}
+.b{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0;border:none;background:var(--dpad);color:#9da0aa;font:700 9px/1 var(--body);letter-spacing:.1em;text-transform:uppercase;cursor:pointer;touch-action:none;
+  box-shadow:inset 0 2px 0 var(--dpad-hi),inset 0 -3px 0 var(--dpad-lo);transition:background .05s,color .05s,box-shadow .05s}
+.up{border-radius:10px 10px 0 0;box-shadow:inset 0 2px 0 var(--dpad-hi)}.down{border-radius:0 0 10px 10px;box-shadow:inset 0 -4px 0 var(--dpad-lo)}.left{border-radius:10px 0 0 10px}.right{border-radius:0 10px 10px 0}
+.b svg{width:30%;height:auto;fill:currentColor}
+.b.lit{color:var(--turbo);box-shadow:inset 0 0 0 2px var(--turbo),inset 0 2px 0 var(--dpad-hi)}
+.b.off{opacity:.35}
+.b.is-down{background:#1c1d22;color:var(--turbo);box-shadow:inset 0 4px 6px rgba(0,0,0,.55)}
+.hub{grid-area:2/2;background:var(--dpad);display:grid;place-items:center}
+.hub::after{content:"";width:46%;height:46%;border-radius:50%;background:radial-gradient(circle at 50% 35%,#1d1e23,var(--dpad-hi))}
+.b:focus-visible{outline:3px solid var(--turbo);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.b{transition:none}}
+
+/* Inside Reddit. The page is always the expanded post (full screen on a phone, a large modal on desktop), whose
+   height can be well short of a phone's. The bezel's width sets the screen's height, so cap the width at what leaves
+   room for the D-pad: 56px of padding, gap and bezel, plus the pad, with the canvas at its shortest (240x150).
+   fitScreen() then grows the canvas upward into whatever is left. Nothing on this page scrolls. */
+.device{max-width:min(640px,calc((100dvh - 60px - var(--dp)) * 1.6 + 36px))}
+html,body{overflow:hidden}

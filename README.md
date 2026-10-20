@@ -1,12 +1,13 @@
-# Reddit game base template
+# Super Bike Racing 1985
 
-A starting point for a game on Reddit's Developer Platform (Devvit Web 0.14):
-a React client drawn as a custom post, a small Express server, Redis, the
-scheduler, and the CRT screen filter. It also holds what we learned building
-one, as docs.
+A side-scrolling four-lane bike racer, as a game on Reddit's Developer Platform
+(Devvit Web 0.14). The post itself is a splash; its button opens the game in
+Reddit's expanded view (full screen on a phone, a large modal on desktop).
 
-It contains no game, only a per-post counter that shows the round trip. Replace
-it.
+Built on decypher's base template: a React client drawn as a custom post, a
+small Express server, Redis, the scheduler, and the CRT screen filter, plus
+what we learned building one, as docs. The template's example post kind (a
+per-post counter) is still here beside the game.
 
 ## Setup
 
@@ -26,17 +27,23 @@ version.
 | [`docs/06-testing.md`](docs/06-testing.md) | the preview harness, crop check, cross-engine input tests, sims |
 | [`docs/07-content-and-review.md`](docs/07-content-and-review.md) | copy, content banks, player text, the app review checklist |
 | [`docs/08-learned-since-the-template.md`](docs/08-learned-since-the-template.md) | **read first**: inline-phone scroll traps, designing for the full-screen reload, setup notes |
+| [`docs/09-game-architecture.md`](docs/09-game-architecture.md) | **the game**: how the single-file original was split into modules, the shared state, load order, how it was checked |
 | `docs/devvit/` | a local copy of Reddit's Devvit docs (not uploaded) |
 
 ## Layout
 
 ```
-devvit.json                    manifest: one menu row, forms, triggers, tasks
+devvit.json                    manifest: two entrypoints, one menu row, forms, triggers, tasks
+original/                      the game as handed over (one HTML file) + the split tool; not uploaded
 src/client/
+  game.html                    THE GAME: the expanded post (entrypoint "game")
+  game/                        the game's modules: core, world, race, rider, modes,
+                               input, gfx, ui, art, attract, assets (PNGs); see doc 09
+  RaceSplash.tsx               the inline post for a "race" post: title art + one button
   index.html                   inline ground + spinner, external preflight script
   public/boot-preflight.js     first request, before the bundle (CSP-safe)
   App.tsx                      --vis-h, the CRT, expand-on-tap, routing by kind
-  ExampleApp.tsx               the example post kind — replace
+  ExampleApp.tsx               the template's example post kind
   components/CrtScreen.tsx     the CRT glass (+ crtSurge)
   components/Paged.tsx         lists that page instead of scrolling
   components/Modal.tsx         portalled overlay
@@ -67,7 +74,7 @@ npm run type-check   # tsc
 npm run check        # devvit.json ↔ routes ↔ post kinds ↔ cron tasks
 npm run build        # client + server
 npm run sim:crons    # reconcile vs the 10-job cap; Eastern gate
-npm run preview      # local harness on :5173
+npm run preview      # local harness on :5173 (#app?kind=race, /game.html)
 npm run check:crop   # needs preview running; CHROMIUM_PATH optional
 npm run test:input   # Playwright, four engines, embedded
 npm run dev          # devvit playtest on dev.subreddit

@@ -1,6 +1,6 @@
 {
   "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
-  "name": "your-app-name",
+  "name": "superbikeracing1985",
   "post": {
     "dir": "dist/client",
     "entrypoints": {
@@ -8,8 +8,15 @@
         "entry": "index.html",
         "height": "tall",
         "styles": {
-          "backgroundColor": "#171a1fff",
-          "backgroundColorDark": "#171a1fff"
+          "backgroundColor": "#140c3cff",
+          "backgroundColorDark": "#140c3cff"
+        }
+      },
+      "game": {
+        "entry": "game.html",
+        "styles": {
+          "backgroundColor": "#cdc8bfff",
+          "backgroundColorDark": "#cdc8bfff"
         }
       }
     }
@@ -37,10 +44,12 @@
   },
   "forms": {
     "chooseKind": "/internal/forms/choose-kind",
+    "newRace": "/internal/forms/new-race",
     "newExample": "/internal/forms/new-example"
   },
   "sourceIgnores": [
-    "docs/devvit/"
+    "docs/devvit/",
+    "original/"
   ],
   "triggers": {
     "onAppInstall": "/internal/triggers/installed",
@@ -56,6 +65,6 @@
     }
   },
   "dev": {
-    "subreddit": "your_dev_subreddit"
+    "subreddit": "decypher_game_dev"
   }
 }

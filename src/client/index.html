@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Game</title>
+    <title>Super Bike Racing 1985</title>
     <!--
       The loading spinner and the ground, painted from the HTML rather than
       waiting for React or the stylesheet.
@@ -15,13 +15,16 @@
       one of the things being waited for. Keep these in step with --bg-grad,
       --border and --accent in styles/00-base.css, and with devvit.json →
       post.entrypoints.default.styles.backgroundColor.
+
+      Super Bike Racing 1985's splash (.race-splash) is the post this app
+      makes, so the ground is its night sky, #140c3c, here and in devvit.json.
     -->
     <style>
       html,
       body {
         margin: 0;
         min-height: 100%;
-        background: radial-gradient(115% 85% at 50% 42%, #2a2e35 0%, #171a1f 45%, #0a0a0c 100%);
+        background: #140c3c;
       }
       .boot {
         display: flex;

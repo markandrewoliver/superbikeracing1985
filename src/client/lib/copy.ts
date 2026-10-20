@@ -17,6 +17,10 @@ export const COPY = {
   mineLabel: "",
   /** Shown when a request fails. */
   error: "",
+
+  /** Super Bike Racing 1985 — the inline splash's one button, which opens the
+   *  game. The owner's words (Oct 20). */
+  raceOpen: "Click here",
 } as const;
 
 export type CopyKey = keyof typeof COPY;

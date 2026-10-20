@@ -10,6 +10,11 @@ and that doc holds what decypher learned after the template was cut — above al
 that on a phone the inline post is a splash and play starts full screen, which
 is what got decypher 0.0.601 rejected for a scroll trap.
 
+**The game is `src/client/game/`** (plain JavaScript modules, opened from
+`game.html` in the expanded view). Read `docs/09-game-architecture.md` before
+changing it. `original/` is the single-file game it was split from: a
+reference, never edited, never built.
+
 ## Never
 
 - **Never make a push install an app version.** Push → upload only; installing
@@ -39,6 +44,12 @@ is what got decypher 0.0.601 rejected for a scroll trap.
   say what it needs. Fixing a typo in supplied copy is fine; rewording is not.
 - **Never put an answer in `postData`** in plain text.
 - **Never run a regex over a whole stylesheet.**
+- **Never assign another game module's variable.** Put shared state on
+  `game`, `race`, `view` or `menu` (`src/client/game/core/state.js`), or call a function
+  in the owning module.
+- **Never read another game module's `const` at the top level** unless it is a
+  leaf (`core/`, `art/`, `world/settings.js`). Module cycles make it undefined
+  at load.
 
 ## Always
 

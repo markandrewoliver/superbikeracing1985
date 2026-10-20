@@ -196,17 +196,30 @@ export function webViewMode(): "inline" | "expanded" {
  * `WebViewInternalMessageScope.CLIENT`, and the effect's own `type` is clobbered
  * by `emitEffect`'s spread, so omitting it is correct).
  */
-export function requestExpandedMode(event: MouseEvent): void {
+export function requestExpandedMode(
+  event: MouseEvent,
+  entry: EntryName = ENTRY,
+  opts: { desktop?: boolean } = {},
+): void {
   if (!event.isTrusted || event.type !== "click") return;
   if (webViewMode() === "expanded") return;
-  /* **Never on desktop**, and the gate is here rather than at each call site
-     because forgetting it is invisible until somebody presses the button: the
-     desktop host answers this with its own "Preview on Devices" modal, which is
-     not an expanded post and is not what any caller wanted. `expandOnTap` has
-     always checked `isMobile()` before installing its listener; a button that
-     called this directly once did not, and opened that modal on desktop. One gate, at the bottom, that no new caller can miss. */
-  if (!isMobile()) return;
-  emitMode(IMMERSIVE, ENTRY);
+  /* **Not on desktop unless the caller says so**, and the gate is here rather
+     than at each call site because forgetting it is invisible until somebody
+     presses the button: decypher saw the desktop host answer this with its own
+     "Preview on Devices" modal, which is not an expanded post. `expandOnTap`
+     has always checked `isMobile()` before installing its listener; a button
+     that called this directly once did not, and opened that modal on desktop.
+     A post whose only way in is the expanded view (Super Bike Racing's splash)
+     passes `desktop: true` — check it on a real desktop post after each
+     upload. */
+  if (!isMobile() && !opts.desktop) return;
+  emitMode(IMMERSIVE, entry);
+}
+
+/** True inside a Devvit webview, which is what `requestExpandedMode` needs to
+ *  do anything at all; false in the local preview. */
+export function inDevvit(): boolean {
+  return !!global_()?.entrypoints;
 }
 
 /** Back to the inline post. Same trusted-click rule. */
@@ -217,12 +230,15 @@ export function exitExpandedMode(event: MouseEvent): void {
 }
 
 /**
- * Our only `devvit.json` `post.entrypoints` key. Named rather than looked up so
- * that renaming it there is a compile-time concern here — but resolved through
- * `devvit.entrypoints` at the moment of use, because the URL is the host's to
- * decide and it carries a per-session origin we must not guess at.
+ * Our `devvit.json` `post.entrypoints` keys: `default` is the inline post,
+ * `game` is Super Bike Racing's expanded page (game.html). Named rather than
+ * looked up so that renaming one there is a compile-time concern here — but
+ * resolved through `devvit.entrypoints` at the moment of use, because the URL
+ * is the host's to decide and it carries a per-session origin we must not
+ * guess at.
  */
-const ENTRY = "default";
+type EntryName = "default" | "game";
+const ENTRY: EntryName = "default";
 
 /**
  * Exiting sends no entry, which is what the SDK does — there is nothing to

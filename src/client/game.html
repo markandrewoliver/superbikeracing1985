@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Super Bike Racing 1985</title>
+<!-- PROJECT RULE: all player-facing text (menus, HUD, popups, results, labels) must be written or approved by the owner.
+     Only exception: fixing typos in the owner's own text. Propose new wording; don't add it unasked. -->
+<!-- The expanded post (devvit.json → post.entrypoints.game). The inline post is index.html, a splash.
+     No inline <script>: Reddit's CSP blocks it in a real post. No webfonts from Google: the webview may only
+     reach its own origin. -->
+<link rel="stylesheet" href="./game/game.css">
+</head>
+<body>
+<main class="device">
+  <div class="bezel">
+    <div class="screen"><canvas id="game" width="240" height="150" role="img" aria-label="Side-view dirt bike race across four lanes"></canvas></div>
+  </div>
+  <h1 class="sr">Super Bike Racing 1985</h1>
+  <div class="controls">
+    <div class="pad" id="pad" role="group" aria-label="D-pad">
+      <button class="b up" type="button" data-btn="up" aria-label="Move up one lane"><svg viewBox="0 0 24 24"><path d="M12 5l7 9H5z"/></svg></button>
+      <button class="b left" type="button" data-btn="left" aria-label="Tilt forward"><svg viewBox="0 0 24 24"><path d="M5 12l9-7v14z"/></svg></button>
+      <div class="hub" aria-hidden="true"></div>
+      <button class="b right" type="button" data-btn="right" aria-label="Tilt back"><svg viewBox="0 0 24 24"><path d="M19 12l-9 7V5z"/></svg></button>
+      <button class="b down" type="button" data-btn="down" aria-label="Move down one lane"><svg viewBox="0 0 24 24"><path d="M12 19l-7-9h14z"/></svg></button>
+    </div>
+  </div>
+</main>
+<script type="module" src="./game/main.js"></script>
+</body>
+</html>

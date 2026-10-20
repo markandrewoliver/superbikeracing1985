@@ -38,6 +38,26 @@ export type PostKind = {
 
 export const POST_KINDS: PostKind[] = [
   {
+    // Super Bike Racing 1985. The post is a splash; the game opens from it in
+    // the expanded view (devvit.json → post.entrypoints.game).
+    value: "race",
+    label: "Super Bike Racing 1985",
+    formName: "newRace",
+    form: async () => ({
+      title: "Create a Super Bike Racing 1985 post",
+      acceptLabel: "Create post",
+      fields: [
+        {
+          type: "string",
+          name: "title",
+          label: "Post title",
+          required: true,
+          defaultValue: "Super Bike Racing 1985",
+        },
+      ],
+    }),
+  },
+  {
     value: "example",
     label: "Example post",
     formName: "newExample",

@@ -10,6 +10,8 @@ import "./styles.css";
  *
  *   http://localhost:5173/preview.html#app              the app, signed in
  *   http://localhost:5173/preview.html#app?guest        signed out
+ *   http://localhost:5173/preview.html#app?kind=race    Super Bike Racing's splash
+ *   http://localhost:5173/game.html                     the game itself
  *   http://localhost:5173/preview.html?vp=288x512#app   inside a post-sized frame
  *   http://localhost:5173/embed.html#app                cross-origin, unfocused
  *
@@ -28,9 +30,11 @@ import "./styles.css";
    boot preflight see what a real post would hand them.
    -------------------------------------------------------------------------- */
 const guest = location.hash.includes("guest");
+/** Which post kind to draw: `?kind=race` on the hash, else the example. */
+const kind = /[?&]kind=(\w+)/.exec(location.hash)?.[1] ?? "example";
 (globalThis as { devvit?: unknown }).devvit = {
   context: {
-    postData: { kind: "example" },
+    postData: { kind },
     postId: "t3_preview",
     subredditId: "t5_preview",
     ...(guest ? {} : { userId: "t2_you", username: "you", snoovatar: "" }),

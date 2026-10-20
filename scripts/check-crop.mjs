@@ -50,7 +50,7 @@ const FRAMES = [
  * preview.tsx routes. **A screen not in this list is simply not checked**, so
  * add a route here in the same change that adds the screen.
  */
-const ROUTES = ["#app", "#app?guest"];
+const ROUTES = ["#app", "#app?guest", "#app?kind=race"];
 
 /** A couple of pixels of rounding is not a crop. */
 const SLACK = 2;
