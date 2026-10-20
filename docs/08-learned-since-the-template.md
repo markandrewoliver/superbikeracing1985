@@ -127,7 +127,7 @@ add it to `sourceIgnores` in the same commit.
   `npm install` to update the lockfile and `npm ci` to get a clean tree. A
   stale `node_modules` type-checks and builds against the old SDK without
   complaint.
-- **App name.** `devvit.json` still says `your-app-name` (README step 1). The
+- **App name.** `devvit.json` still says `your-app-name` (`SETUP.md` step 2). The
   name is the app's Reddit account name and its Community URL slug: 3–20
   characters, starting with a letter, lowercase letters, numbers and hyphens
   only (`docs/devvit/capabilities/devvit-web/devvit_web_configuration.md`).

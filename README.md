@@ -8,24 +8,11 @@ one, as docs.
 It contains no game, only a per-post counter that shows the round trip. Replace
 it.
 
-## Start a new game
+## Setup
 
-```bash
-git checkout base-template
-git checkout -b main          # in a new repo, or a fresh branch
-nvm use                       # Node 24
-npm ci
-npx devvit login
-```
-
-1. Rename `your-app-name` in `devvit.json` and `package.json`.
-2. Set `dev.subreddit` in `devvit.json`.
-3. Fill in `src/client/lib/copy.ts` (it starts blank on purpose; see
-   `docs/07-content-and-review.md`).
-4. GitHub: secret `DEVVIT_AUTH_TOKEN`, variables `PROD_SUBREDDIT` and
-   `DEV_SUBREDDIT` (see `docs/05-shipping.md`).
-5. `npm run preview` → <http://localhost:5173/preview.html#app>.
-6. `npm run dev` to playtest on the dev subreddit.
+Setup instructions are in **[`SETUP.md`](SETUP.md)**: naming the app, the test
+subreddit, the GitHub secret and variables, running it locally, and shipping a
+version.
 
 ## Read these
 
