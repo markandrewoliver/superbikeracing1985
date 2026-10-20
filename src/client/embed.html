@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Embedded post harness</title>
+<!--
+  A post, in the shape Reddit actually serves it: the app in a sandboxed iframe
+  on a different origin, inside a page that owns the focus.
+
+  `127.0.0.1` against `localhost` is the trick — same server, different origin,
+  so the frame is genuinely cross-origin without a second host.
+
+  A plain Playwright page is always focused and always top-level, and neither is
+  true of a post. Focus bugs (iOS refusing to focus a hidden field, Firefox
+  moving focus without the event) live in that gap.
+
+  `?n=6` puts several posts on the page, which is what a feed is. Every post is
+  its own webview running the whole CRT; one composites fine, a feed of them is
+  a different question.
+-->
+<style>
+  html, body { margin: 0; height: 100%; background: #f6f7f8; font: 13px system-ui; }
+  .feed { padding: 24px; }
+  .post { width: 720px; height: 512px; margin-bottom: 16px; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; background: #fff; }
+  iframe { width: 100%; height: 100%; border: 0; display: block; }
+</style>
+</head>
+<body>
+  <div class="feed">
+    <input id="feed-focus" placeholder="the page around the post" style="margin-bottom:12px;padding:6px;width:320px">
+    <div id="posts"></div>
+  </div>
+  <script type="module">
+    const params = new URLSearchParams(location.search);
+    const n = Math.max(1, Number(params.get("n") || 1));
+    const hash = location.hash || "#app";
+    const host = document.getElementById("posts");
+    for (let i = 0; i < n; i++) {
+      const box = document.createElement("div");
+      box.className = "post";
+      const f = document.createElement("iframe");
+      f.id = i === 0 ? "post" : `post-${i}`;
+      f.setAttribute("sandbox", "allow-scripts allow-same-origin allow-popups allow-forms");
+      f.src = `http://127.0.0.1:5173/preview.html?nopanel=1${hash}`;
+      box.appendChild(f);
+      host.appendChild(box);
+    }
+    // The surrounding page holds focus, the way a feed does.
+    document.getElementById("feed-focus").focus();
+  </script>
+</body>
+</html>

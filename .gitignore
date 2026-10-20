@@ -1,0 +1,27 @@
+# **This file decides what Reddit's reviewers receive.** `devvit publish` builds
+# its source zip from the WORKING DIRECTORY filtered by this file (plus
+# devvit.json → sourceIgnores). Anything not ignored here is uploaded for app
+# review — scratch files, mockups, virtualenvs, test traces, all of it.
+node_modules/
+dist/
+.devvit/
+*.log
+.env
+
+# Agent / editor scratch.
+.context/
+.design/
+
+# Playwright run artifacts (megabytes of traces).
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+
+# Generated intermediates from content pipelines.
+build/
+
+# Python tooling.
+__pycache__/
+.venv/
+venv/

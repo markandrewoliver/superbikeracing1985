@@ -1,0 +1,61 @@
+{
+  "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
+  "name": "your-app-name",
+  "post": {
+    "dir": "dist/client",
+    "entrypoints": {
+      "default": {
+        "entry": "index.html",
+        "height": "tall",
+        "styles": {
+          "backgroundColor": "#171a1fff",
+          "backgroundColorDark": "#171a1fff"
+        }
+      }
+    }
+  },
+  "server": {
+    "dir": "dist/server",
+    "entry": "index.cjs"
+  },
+  "permissions": {
+    "reddit": {
+      "enable": true
+    },
+    "redis": true
+  },
+  "menu": {
+    "items": [
+      {
+        "label": "Create a post",
+        "description": "Pick which kind of post to create.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/create"
+      }
+    ]
+  },
+  "forms": {
+    "chooseKind": "/internal/forms/choose-kind",
+    "newExample": "/internal/forms/new-example"
+  },
+  "sourceIgnores": [
+    "docs/devvit/"
+  ],
+  "triggers": {
+    "onAppInstall": "/internal/triggers/installed",
+    "onAppUpgrade": "/internal/triggers/installed",
+    "onPostDelete": "/internal/triggers/post-deleted",
+    "onCommentDelete": "/internal/triggers/comment-deleted"
+  },
+  "scheduler": {
+    "tasks": {
+      "examplePost": {
+        "endpoint": "/internal/scheduler/example-post"
+      }
+    }
+  },
+  "dev": {
+    "subreddit": "your_dev_subreddit"
+  }
+}

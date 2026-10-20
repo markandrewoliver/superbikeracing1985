@@ -1,0 +1,168 @@
+/* ==========================================================================
+   Tokens and the app column
+   --------------------------------------------------------------------------
+   Rename and recolour freely; keep the *shapes* (see docs/01-frame-and-layout.md).
+
+   Two copies of the ground colour live outside this file and must move with
+   it: the inline <style> in index.html (painted before this stylesheet
+   arrives) and devvit.json → post.entrypoints.default.styles.backgroundColor
+   (painted by Reddit before index.html is shown at all, and flat only — use
+   the tone that covers most of the gradient).
+   ========================================================================== */
+:root {
+  --bg: #171a1f;
+  --bg-elev: #1f232a;
+  --bg-grad: radial-gradient(115% 85% at 50% 42%, #2a2e35 0%, #171a1f 45%, #0a0a0c 100%);
+  --border: #2a323d;
+  --text: #e8e6e3;
+  --text-dim: #9aa1ab;
+  --accent: #fea531;
+  --green: #4fc27a;
+  --red: #e5534b;
+
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Height of the on-screen keyboard row, when one is mounted. In :root on
+     purpose: a parent (.app--keys) reads it to reserve room, and a custom
+     property declared on the child would be invisible there. */
+  --key-h: 44px;
+
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg-grad);
+  color: var(--text);
+  font-family: var(--font-ui);
+  /* No pull-to-refresh / rubber band inside the post. */
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* The app is a fixed-height, non-scrolling column sized to what is actually on
+   screen. `--vis-h` is measured (lib/visibleHeight.ts); the cap guards against
+   a measurement that comes back larger than the frame.
+
+   **Nothing a player can reach may scroll.** Reddit rejects inline scroll
+   traps. If a list does not fit, page it (components/Paged.tsx). */
+.app {
+  height: min(var(--vis-h, 100dvh), 100dvh);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 8px 12px;
+  gap: 8px;
+}
+
+.app__head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  /* Every item may shrink: at 288px wide a row of `flex: 0 0 auto` items
+     pushes the last one (usually the menu) off the edge of the post. */
+  min-width: 0;
+}
+.app__head > * {
+  min-width: 0;
+}
+
+/* `flex: 1 1 0`, never `1 1 auto`: an auto basis makes the row exactly as tall
+   as whatever turns up in it, so late content moves everything around it. */
+.app__body {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.btn {
+  font: inherit;
+  font-weight: 600;
+  color: #111;
+  background: var(--accent);
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 18px;
+  min-height: 44px; /* a finger, not a cursor */
+  cursor: pointer;
+  /* Stops iOS holding the press for its double-tap-to-zoom window. */
+  touch-action: manipulation;
+}
+.btn:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+.btn--quiet {
+  color: var(--text);
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+}
+
+.loading {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.loading i {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* A slot nobody has written copy for yet. Visible on purpose — see
+   docs/07-content-and-review.md. */
+.todo-copy {
+  display: inline-block;
+  vertical-align: middle;
+  outline: 1px dashed var(--text-dim);
+  min-width: 6em;
+  min-height: 1.2em;
+}
+
+/* ---------- The example post kind (replace) ---------- */
+.app__title {
+  margin: 0;
+  font-size: 18px;
+  /* A heading that might be long wraps rather than pushing the row wide. */
+  overflow-wrap: anywhere;
+}
+.app__who {
+  color: var(--text-dim);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.count {
+  margin: 0;
+  font-size: 16px;
+  /* Digits that change should not change width. */
+  font-variant-numeric: tabular-nums;
+}
+.count strong {
+  font-size: 28px;
+  color: var(--accent);
+}

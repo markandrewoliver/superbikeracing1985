@@ -1,0 +1,255 @@
+name: Deploy to Devvit
+
+# Pushing builds and uploads a new app version. It does NOT change what any
+# subreddit is running — neither production nor dev. Installing is always a
+# deliberate, manual step (see "TO INSTALL A VERSION" below).
+#
+# WHY NOTHING AUTO-INSTALLS
+# ----------------------------------------------------------------------------
+# Reddit approves apps *per version*, and `devvit install` defaults to @latest.
+# So auto-installing on push would replace whatever approved version a subreddit
+# is running with a brand-new, unapproved one.
+#
+# That matters because it silently breaks user actions. With `runAs: "USER"`,
+# an UNAPPROVED version posts from the app account (u/<your-app>) for everyone
+# except the app owner. Only an APPROVED version posts as the actual user.
+# Losing approval loses that feature — with no error, just wrong attribution.
+#
+# On the dev subreddit an unapproved build is a known cost of testing, not a
+# mistake — but which build a subreddit runs should still be something a
+# person chose, not a side effect of a push.
+#
+# TO INSTALL A VERSION (either subreddit)
+# ----------------------------------------------------------------------------
+#   1. `npx devvit publish`  — cuts a version and files it for review
+#   2. wait for it to show "Approved" at developers.reddit.com → App versions
+#   3. run this workflow from the Actions tab with the version number in
+#      "install_version" (works from the GitHub mobile app too). The branch you
+#      run it on picks the target: main → production, dev → the dev sub.
+#      The CLI equivalent is `npx devvit install r/<sub> <app>@0.0.179`.
+#
+# Note that `npm run dev` (devvit playtest) installs its own throwaway versions
+# on the dev sub. That's fine for iterating, but it displaces whatever approved
+# version was pinned there — reinstall it (step 3) before testing user actions.
+#
+# ONE-TIME SETUP (do this once from a computer):
+#   1. Run `npx devvit login` in the project and finish the browser sign-in.
+#   2. Copy the ENTIRE contents of the created token file:  ~/.devvit/token
+#   3. In GitHub: repo Settings → Secrets and variables → Actions → New
+#      repository secret, name it exactly  DEVVIT_AUTH_TOKEN , paste the token.
+#   4. Same page, Variables tab: set PROD_SUBREDDIT and DEV_SUBREDDIT to the
+#      subreddit names, without the r/.
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+    paths-ignore:
+      - "**/*.md"
+      - ".github/**"
+      - "docs/**"
+  workflow_dispatch:
+    inputs:
+      install_version:
+        description: "Install an ALREADY-APPROVED version on this branch's subreddit (e.g. 0.0.178). Leave blank for a normal build + upload."
+        required: false
+        default: ""
+      report_only:
+        description: "Report which version each subreddit is running and do nothing else (no upload, no install)."
+        type: boolean
+        required: false
+        default: false
+
+# Don't let two deploys of the SAME branch overlap, but let main and dev run
+# independently (a dev push must not cancel a production deploy).
+concurrency:
+  group: devvit-deploy-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      DEVVIT_AUTH_TOKEN: ${{ secrets.DEVVIT_AUTH_TOKEN }}
+      INSTALL_VERSION: ${{ github.event.inputs.install_version }}
+      REPORT_ONLY: ${{ github.event.inputs.report_only }}
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          # Devvit 0.14 runs apps on Node 24; match it here so CI builds against
+          # the same runtime the app actually executes on.
+          node-version: "24"
+          cache: npm
+
+      - name: Fail early if the auth token secret is missing
+        run: |
+          if [ -z "$DEVVIT_AUTH_TOKEN" ]; then
+            echo "::error::DEVVIT_AUTH_TOKEN secret is not set. Add it in Settings → Secrets and variables → Actions (see .github/workflows/deploy.yml for how)."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Cheap gates. Add your content checks here: a bad row in a committed bank
+      # is a code change like any other and should fail here, not reach a player.
+      - name: Check post kinds and the schedule
+        run: npm run check
+
+      # The client and server share types across the wire; a mismatch shows up
+      # here rather than as a blank webview.
+      - name: Type-check
+        run: npm run type-check
+
+      - name: Confirm authentication
+        run: npx devvit whoami
+
+      # Work out what this run should do before doing any of it, so the log
+      # states the plan up front.
+      #
+      # mode=install  → a version was typed into "install_version": skip the
+      #                 build/upload entirely and just install that version.
+      #                 This is the post-approval path, for either subreddit.
+      # mode=upload   → ordinary push: build and upload a new version, and stop
+      #                 there. Nothing is installed (see the header comment).
+      # mode=report   → "report_only" was ticked: touch nothing, just print what
+      #                 each subreddit is running. A menu or post kind that
+      #                 "went missing" is almost always a subreddit running an
+      #                 older version than whoever is reading it assumes.
+      - name: Plan this run
+        id: plan
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            SUB="${{ vars.PROD_SUBREDDIT }}"
+          else
+            SUB="${{ vars.DEV_SUBREDDIT }}"
+          fi
+          if [ -z "$SUB" ]; then
+            echo "::error::Set the PROD_SUBREDDIT and DEV_SUBREDDIT repository variables (Settings → Secrets and variables → Actions → Variables)."
+            exit 1
+          fi
+          echo "subreddit=$SUB" >> "$GITHUB_OUTPUT"
+
+          if [ "$REPORT_ONLY" = "true" ]; then
+            echo "mode=report" >> "$GITHUB_OUTPUT"
+            echo "Plan: report installed versions only. Nothing is built, uploaded or installed."
+          elif [ -n "$INSTALL_VERSION" ]; then
+            echo "mode=install" >> "$GITHUB_OUTPUT"
+            echo "Plan: install version $INSTALL_VERSION on r/$SUB (no new version will be built)."
+          else
+            echo "mode=upload" >> "$GITHUB_OUTPUT"
+            echo "Plan: build and upload a new version. It will NOT be installed on r/$SUB, which stays on the version it is already running."
+          fi
+
+      # Runs for an upload AND an install, which is not obvious for the latter:
+      # `devvit install`
+      # validates the local devvit.json against files on disk and aborts with
+      # "Your devvit.json references files that don't exist" if dist/ is missing
+      # — even though the version being installed is the one already uploaded to
+      # Reddit, and these local artifacts are never used. Cheap enough (~2s) to
+      # just always build and keep the CLI happy.
+      - name: Build client + server
+        if: ${{ steps.plan.outputs.mode != 'report' }}
+        run: npm run build
+
+      # The version the CLI assigns is the one thing a human needs out of this
+      # run, and it is printed above ~65 lines of asset-upload chatter — far
+      # enough up that reading it back costs several log fetches. Capture it here
+      # and put it where it can be seen: a run annotation, and the summary below.
+      - name: Upload a new app version
+        id: upload
+        if: ${{ steps.plan.outputs.mode == 'upload' }}
+        run: |
+          set -o pipefail
+          npx devvit upload 2>&1 | tee /tmp/devvit-upload.log
+          VERSION="$(grep -oE 'bumped app version to: [0-9]+(\.[0-9]+)+' /tmp/devvit-upload.log \
+            | tail -1 | grep -oE '[0-9]+(\.[0-9]+)+' || true)"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [ -n "$VERSION" ]; then
+            echo "::notice title=Uploaded::$VERSION — install it with this workflow's install_version input."
+          else
+            echo "::warning::Uploaded, but the version number could not be read from the CLI output."
+          fi
+
+      # Manual, deliberate install of a specific version onto the branch's
+      # subreddit. Use this after a publish request has been approved.
+      #
+      # A freshly uploaded version needs a moment to finish processing before it
+      # can be installed; installing too soon fails with "That version of this
+      # app isn't ready to be installed yet". An approved version is long past
+      # that, so no retry loop is needed here.
+      #
+      # The app name is passed explicitly. `devvit install <sub> @<version>` is
+      # documented in the CLI's own --help examples but fails on 0.14 with
+      # "DevvitVersion parts can only be numbers"; the `<app>@<version>` form
+      # works. Read the name from devvit.json rather than hardcoding it.
+      - name: Install the requested version
+        if: ${{ steps.plan.outputs.mode == 'install' }}
+        run: |
+          SUB="r/${{ steps.plan.outputs.subreddit }}"
+          if ! printf '%s' "$INSTALL_VERSION" | grep -Eq '^[0-9]+(\.[0-9]+)+$'; then
+            echo "::error::install_version must be a plain version number like 0.0.179 (got '$INSTALL_VERSION')."
+            exit 1
+          fi
+          APP="$(node -p "require('./devvit.json').name")"
+          echo "Installing $APP@$INSTALL_VERSION on $SUB..."
+          npx devvit install "$SUB" "$APP@$INSTALL_VERSION"
+
+      # What a subreddit is RUNNING is the one fact none of the above states, and
+      # it is the fact most menu and post-kind mysteries turn out to be about: a
+      # manifest is a claim about the version being uploaded, never about the
+      # version a moderator is looking at. `devvit list installs` answers it per
+      # subreddit, reads nothing but the install record, and changes nothing —
+      # so it runs on every mode, including after an install, where it is the
+      # only confirmation that the install took.
+      #
+      # It must not fail the run: a report is worth having and is never the
+      # reason to call a deploy broken.
+      - name: Report what each subreddit is running
+        if: always() && steps.plan.outputs.subreddit != ''
+        run: |
+          PROD="${{ vars.PROD_SUBREDDIT }}"
+          DEV="${{ vars.DEV_SUBREDDIT }}"
+          {
+            echo ""
+            echo "### Installed versions"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+          for SUB in "$PROD" "$DEV"; do
+            echo "--- r/$SUB ---"
+            OUT="$(npx devvit list installs "$SUB" 2>&1 || true)"
+            echo "$OUT"
+            {
+              echo "**r/$SUB**"
+              echo ""
+              echo '```'
+              echo "$OUT"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      # Leave a plain-language note on the run summary so the Actions tab says
+      # what state things are in without needing to read the logs.
+      - name: Summarize
+        run: |
+          SUB="${{ steps.plan.outputs.subreddit }}"
+          {
+            if [ "${{ steps.plan.outputs.mode }}" = "report" ]; then
+              echo "Reported installed versions only. Nothing was built, uploaded or installed."
+            elif [ "${{ steps.plan.outputs.mode }}" = "install" ]; then
+              echo "Installed **@$INSTALL_VERSION** on **r/$SUB**."
+            elif [ -n "${{ steps.upload.outputs.version }}" ]; then
+              echo "Uploaded **@${{ steps.upload.outputs.version }}**. **It is not installed on r/$SUB**, which is still running whatever it ran before."
+            else
+              echo "Uploaded a new version. **It is not installed on r/$SUB**, which is still running whatever it ran before."
+              echo ""
+              echo "That is deliberate: approval is granted per version, and installing an unapproved version reverts \`runAs: \"USER\"\` to posting as the app account for everyone but the app owner."
+              echo ""
+              echo "To ship it: run \`npx devvit publish\`, wait for **Approved**, then re-run this workflow on this branch with that version in \`install_version\`."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

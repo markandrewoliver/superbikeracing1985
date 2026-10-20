@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Game</title>
+    <!--
+      The loading spinner and the ground, painted from the HTML rather than
+      waiting for React or the stylesheet.
+
+      An inline <style> is fine under Reddit's CSP (it restricts scripts, not
+      styles). An inline <script> is NOT — see boot-preflight.js.
+
+      The colours are spelled out because the stylesheet holding the tokens is
+      one of the things being waited for. Keep these in step with --bg-grad,
+      --border and --accent in styles/00-base.css, and with devvit.json →
+      post.entrypoints.default.styles.backgroundColor.
+    -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: radial-gradient(115% 85% at 50% 42%, #2a2e35 0%, #171a1f 45%, #0a0a0c 100%);
+      }
+      .boot {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100dvh;
+      }
+      .boot i {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 3px solid #2a323d;
+        border-top-color: #fea531;
+        animation: boot-spin 0.8s linear infinite;
+      }
+      @keyframes boot-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+    <script src="./boot-preflight.js"></script>
+  </head>
+  <body>
+    <div id="root">
+      <div class="boot"><i role="status" aria-label="Loading"></i></div>
+    </div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,214 @@
+/* ==========================================================================
+   The CRT glass  (components/CrtScreen.tsx · docs/03-crt-filter.md)
+   --------------------------------------------------------------------------
+   The rule this whole block is built to hold:
+
+     NOTHING FILTERS, NOTHING BLENDS, NOTHING READS BACK.
+
+   `mix-blend-mode` blends on the CPU in Firefox (bug 1008128); blending and CSS
+   filters interact badly (1083241); `filter: url()` on a huge element is the
+   shape of 1520682; `feTurbulence` is expensive (422371); `backdrop-filter`
+   samples the whole backdrop every frame. A stack of full-viewport blended,
+   filtered layers — once per post, on a feed showing several posts — killed
+   Firefox's GPU process on desktop, crashed Firefox for Android outright, and
+   gave "A problem repeatedly occurred" on older iPads. From outside it looked
+   like "the game will not take a click". None of it reproduced in a desktop
+   preview.
+
+   What survives costs a composite and nothing else:
+     - bloom      an inset box-shadow (the lit rim)
+     - scanlines  a 2px repeating gradient, black at low alpha
+     - vignette   one radial gradient
+     - roll       transform + opacity on one element
+     - glow/bleed a text-shadow on the type, inherited from .crt-screen
+
+   The dials are 0-100-ish numbers, each multiplied by a per-stage factor
+   below. The preview's CRT panel (preview.tsx) writes them live.
+   ========================================================================== */
+:root {
+  /* Chromatic offset in units of 0.022px (101 -> 2.22px), and its strength.
+     Width and strength are separate judgements: a wide split laid down faint
+     reads as aberration; a narrow one laid down hard reads as a doubled glyph. */
+  --crt-bleed: 101;
+  --crt-bleed-a: 0.05;
+  --crt-vignette: 5;    /* x 0.02  = alpha at the corners */
+  --crt-scanlines: 12;  /* x 0.009 = alpha at each band's peak */
+  --crt-roll: 16.8;     /* x 0.009 = what the roll bar adds over the lines */
+  --crt-glow: 10;       /* drives the bloom rim and the type glow */
+  --crt-roll-band: 7;   /* the roll band's height, % of the screen */
+  --crt-roll-time: 5.1; /* seconds per sweep */
+  --crt-roll-pause: 10; /* seconds between sweeps (read by CrtScreen.tsx) */
+
+  /*
+    The type's glow and bleed, as ONE token.
+
+    `text-shadow` is inherited, which is how one declaration lights the whole
+    app — but an element that declares its own shadow REPLACES it, and form
+    controls never inherit it at all (the UA reset beats inheritance). So:
+
+      - anything with a shadow of its own writes
+            text-shadow: <its own>, var(--crt-type-shadow);
+      - form controls take `text-shadow: inherit` (rule below);
+      - a surface that should not glow (paper, a photo caption) re-declares the
+        token as `0 0 0 transparent` — NOT `none`, which is illegal inside a
+        shadow list and would invalidate every composed declaration under it.
+
+    Three glow stops, because brightness has to fall off over a distance for
+    type to read as lit rather than thickened. **Every radius is capped with
+    min()**: anything that surges --crt-glow (crtSurge) would otherwise grow the
+    widest stop quadratically on every glyph, every frame. A stop added here
+    needs a cap in the same change.
+  */
+  --crt-type-shadow:
+    0 0 min(calc(var(--crt-glow) * 0.1px), 1.5px) currentColor,
+    0 0 min(calc(var(--crt-glow) * 0.8px), 12px)
+      color-mix(in srgb, currentColor 28%, transparent),
+    0 0 min(calc(var(--crt-glow) * 2.2px), 30px)
+      color-mix(in srgb, currentColor 14%, transparent),
+    calc(var(--crt-bleed) * 0.022px) 0 0 rgba(255, 0, 0, var(--crt-bleed-a)),
+    calc(var(--crt-bleed) * -0.022px) 0 0 rgba(0, 0, 255, var(--crt-bleed-a));
+}
+
+/* The wrapper the routed screen renders inside. NEVER put a filter or a
+   transform here at rest: either makes it the containing block for every
+   `position: fixed` descendant, which traps every overlay inside it. */
+.crt-screen {
+  text-shadow: var(--crt-type-shadow);
+}
+.crt-screen :is(button, input, select, textarea, optgroup) {
+  text-shadow: inherit;
+}
+
+/* No box of its own: the layers sit in the root stacking context. */
+.crt {
+  display: contents;
+}
+
+/* Qualified with the element on purpose: a later bare `.crt__x { display:none }`
+   is (0,1,0) and loses to this (0,1,1). To turn a layer off, write
+   `.crt > span.crt__x { display: none }` and check getComputedStyle — a layer
+   that paints nothing is still a full-viewport layer the compositor carries. */
+.crt > span {
+  position: fixed;
+  inset: 0;
+  height: min(var(--vis-h, 100dvh), 100dvh);
+  display: block;
+  pointer-events: none;
+  /* Above everything the app draws. Keep the app's own z-indexes well below
+     (this template uses <= 60), and never lift a screen above the glass to
+     escape it — mask the glass instead. */
+  z-index: 9000;
+}
+
+.crt__bloom {
+  box-shadow: inset 0 0 calc(var(--crt-glow) * 3.2px)
+    rgba(255, 244, 226, calc(var(--crt-glow) * 0.0075));
+}
+
+/* Soft, not striped: hard 1-in-3 black rules read far heavier than the same
+   alpha as a gradient. These sit on the glyphs, so they are the stage that
+   costs legibility — keep them low. */
+.crt__scanlines {
+  background-image: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, calc(var(--crt-scanlines) * 0.009)) 0%,
+    rgba(0, 0, 0, 0) 55%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  background-size: 100% 2px;
+  background-repeat: repeat;
+}
+
+/* Elliptical, because the fall-off should not read as a circle on a phone. */
+.crt__vignette {
+  background: radial-gradient(
+    ellipse 78% 62% at 50% 50%,
+    transparent 40%,
+    rgba(0, 0, 0, calc(var(--crt-vignette) * 0.02)) 100%
+  );
+}
+
+/*
+  The roll: a band of stronger scanlines drifting DOWN the screen (crossing the
+  lines, as a CRT with imperfect vertical hold does). It is what makes the tube
+  read as powered rather than printed, and why the resting scanlines can be
+  faint.
+
+  The band is a mask; the sweep is a transform. Animating mask-position or a
+  gradient stop repaints a full-screen layer every frame; a transform is
+  composited. (Third-party CRT libraries animate `top` — that lays out every
+  frame. Do not "fix" this to match one.)
+*/
+.crt__roll {
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(0, 0, 0, calc(var(--crt-roll) * 0.009)) 0 1px,
+    rgba(0, 0, 0, 0) 1px 2px
+  );
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.65) 34%,
+    rgb(0, 0, 0) 50%,
+    rgba(0, 0, 0, 0.65) 66%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.65) 34%,
+    rgb(0, 0, 0) 50%,
+    rgba(0, 0, 0, 0.65) 66%,
+    transparent 100%
+  );
+  -webkit-mask-size: 100% calc(var(--crt-roll-band) * 1%);
+  mask-size: 100% calc(var(--crt-roll-band) * 1%);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  transform: translateY(-24%);
+  opacity: 0;
+}
+.crt__roll.is-rolling {
+  animation: crt-roll calc(var(--crt-roll-time) * 1s) linear;
+}
+@keyframes crt-roll {
+  from { transform: translateY(-24%); opacity: 1; }
+  to { transform: translateY(100%); opacity: 1; }
+}
+
+/*
+  The picture losing sync (crtSurge({ shake })). On .crt-screen, not the glass:
+  the signal jitters, the tube's front does not. Scaled a hair so the throw
+  never uncovers the ground at the edges. steps(), because a CRT snaps.
+*/
+.is-crt-shaking .crt-screen {
+  animation: crt-shake 80ms steps(2, jump-none) infinite;
+}
+/* A transform contributes to scrollable overflow even though it changes no
+   layout: the throw pushed the document past the viewport, a scrollbar
+   appeared, and the whole app squeezed 15px sideways. `clip`, not `hidden` —
+   it clips without creating a scroll container. */
+.is-crt-shaking,
+.is-crt-shaking body,
+.is-crt-shaking #root {
+  overflow: clip;
+}
+@keyframes crt-shake {
+  0% { transform: scale(1.006) translate3d(calc(var(--crt-shake, 0) * -1px), calc(var(--crt-shake, 0) * 0.8px), 0); }
+  33% { transform: scale(1.006) translate3d(calc(var(--crt-shake, 0) * 3px), calc(var(--crt-shake, 0) * -1.4px), 0); }
+  66% { transform: scale(1.006) translate3d(calc(var(--crt-shake, 0) * -3px), calc(var(--crt-shake, 0) * 1.6px), 0); }
+  100% { transform: scale(1.006) translate3d(calc(var(--crt-shake, 0) * 1.4px), calc(var(--crt-shake, 0) * -0.6px), 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crt__roll { animation: none; opacity: 0; }
+  /* Light and colour may still surge; the picture stops moving. */
+  .is-crt-shaking .crt-screen { animation: none; transform: none; }
+}
+
+/* A screen that is not "on the tube" (a photo, a sheet of paper) opts its type
+   out by name. Add classes here as needed. */
+.crt-screen .no-crt {
+  text-shadow: none;
+  --crt-type-shadow: 0 0 0 transparent;
+}

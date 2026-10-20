@@ -1,0 +1,166 @@
+<!-- Scraped from https://developers.reddit.com/docs/capabilities/server/triggers -->
+
+- - Automation & Triggers- TriggersOn this page
+
+# Triggers
+
+Triggers allow your app to automatically respond to specific events or actions within a Reddit community. Use triggers to build automation, moderation, and engagement features that react to user or moderator activity.
+
+## What are triggers?​
+
+A trigger is an action you can build into your app that will occur automatically when a specified condition is met. For example, you can set up a trigger to respond when a new post is submitted, a comment is created, or a moderator takes action.
+
+## Supported trigger types​
+
+Event triggers let your app automatically respond to a user's or moderator's action. The following trigger types are supported:
+
+- `onPostSubmit`
+
+- `onPostCreate`
+
+- `onPostUpdate`
+
+- `onPostReport`
+
+- `onPostDelete`
+
+- `onPostFlairUpdate`
+
+- `onCommentCreate`
+
+- `onCommentDelete`
+
+- `onCommentReport`
+
+- `onCommentSubmit`
+
+- `onCommentUpdate`
+
+- `onPostNsfwUpdate`
+
+- `onPostSpoilerUpdate`
+
+- `onAppInstall`
+
+- `onAppUpgrade`
+
+- `onModAction`
+
+- `onModMail`
+
+- `onAutomoderatorFilterPost`
+
+- `onAutomoderatorFilterComment`
+
+- `onMentionInCommentCreate` (limited-access global event)
+
+See the Trigger Event Catalog for when each event fires, its delivery and safety behavior, and its top-level payload. For exhaustive generated type definitions, see the EventTypes API reference.
+
+## Setting up triggers​
+
+### 1. Add triggers and endpoints to `devvit.json`​
+
+Declare the triggers and their corresponding endpoints in your `devvit.json`:
+
+`"triggers": {
+  "onAppUpgrade": "/internal/on-app-upgrade",
+  "onCommentCreate": "/internal/on-comment-create",
+  "onPostSubmit": "/internal/on-post-submit"
+}
+`
+
+### 2. Handle trigger events in your server logic​
+
+Listen for the events in your server and access the data passed into the request:
+
+- Hono- Expressserver/index.ts
+`import type {
+  OnAppUpgradeRequest,
+  OnCommentCreateRequest,
+  OnPostSubmitRequest,
+  TriggerResponse,
+} from '@devvit/web/shared';
+
+app.post('/internal/on-app-upgrade', async (c) => {
+  console.log('Handle event for on-app-upgrade!');
+  const input = await c.req.json<OnAppUpgradeRequest>();
+  const installer = input.installer;
+  console.log('Installer:', JSON.stringify(installer, null, 2));
+  return c.json<TriggerResponse>({ status: 'ok' });
+});
+
+app.post('/internal/on-comment-create', async (c) => {
+  console.log('Handle event for on-comment-create!');
+  const input = await c.req.json<OnCommentCreateRequest>();
+  const comment = input.comment;
+  const author = input.author;
+  console.log('Comment:', JSON.stringify(comment, null, 2));
+  console.log('Author:', JSON.stringify(author, null, 2));
+  return c.json<TriggerResponse>({ status: 'ok' });
+});
+
+app.post('/internal/on-post-submit', async (c) => {
+  console.log('Handle event for on-post-submit!');
+  const input = await c.req.json<OnPostSubmitRequest>();
+  const post = input.post;
+  const author = input.author;
+  console.log('Post:', JSON.stringify(post, null, 2));
+  console.log('Author:', JSON.stringify(author, null, 2));
+  return c.json<TriggerResponse>({ status: 'ok' });
+});
+`
+
+server/index.ts
+`import type {
+  OnAppUpgradeRequest,
+  OnCommentCreateRequest,
+  OnPostSubmitRequest,
+  TriggerResponse,
+} from '@devvit/web/shared';
+
+const router = express.Router();
+
+// ..
+
+router.post<string, never, TriggerResponse, OnAppUpgradeRequest>(
+  "/internal/on-app-upgrade",
+  async (req, res) => {
+  console.log(`Handle event for on-app-upgrade!`);
+  const installer = req.body.installer;
+  console.log("Installer:", JSON.stringify(installer, null, 2));
+  res.status(200).json({ status: "ok" });
+});
+
+router.post<string, never, TriggerResponse, OnCommentCreateRequest>(
+  "/internal/on-comment-create",
+  async (req, res) => {
+  console.log(`Handle event for on-comment-create!`);
+  const comment = req.body.comment;
+  const author = req.body.author;
+  console.log("Comment:", JSON.stringify(comment, null, 2));
+  console.log("Author:", JSON.stringify(author, null, 2));
+  res.status(200).json({ status: "ok" });
+});
+
+router.post<string, never, TriggerResponse, OnPostSubmitRequest>(
+  "/internal/on-post-submit",
+  async (req, res) => {
+  console.log(`Handle event for on-post-submit!`);
+  const post = req.body.post;
+  const author = req.body.author;
+  console.log("Post:", JSON.stringify(post, null, 2));
+  console.log("Author:", JSON.stringify(author, null, 2));
+  res.status(200).json({ status: "ok" });
+});
+`
+
+## Best practices​
+
+- Avoid creating recursive triggers that could cause infinite loops or crashes (for example, a comment trigger that creates a comment).
+
+- Always check the event payload to ensure your app is not the source of the event before taking action.
+
+- Review the Trigger Event Catalog for event behavior and payload details.
+
+caution
+Triggers are not guaranteed to deliver only once for a single event. Ensure your app logic is able to handle this case, e.g. checking if content has been recently actioned before taking action again.

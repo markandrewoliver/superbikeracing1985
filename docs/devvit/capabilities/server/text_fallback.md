@@ -1,0 +1,93 @@
+<!-- Scraped from https://developers.reddit.com/docs/capabilities/server/text_fallback -->
+
+- - Best Practices- Text FallbackOn this page
+
+# Text Fallback
+
+Text fallback lets you specify alternative text content for your interactive post, enabling:
+
+- Old Reddit and third-party app support - These platforms cannot render interactive posts
+
+- Google (SEO) and Reddit Answers indexing - Critical for discoverability and growth
+
+- AutoModerator rule compatibility - Allows mod rules to process your post content
+
+- Reddit safety checks and filters - Enables content moderation systems to work properly
+
+- Custom post thumbnail - Link to an image to generate a thumbnail
+
+Text fallback uses Markdown formatting and allows for up to 40,000 characters.
+
+## Reddit API​
+
+The text fallback is only available when using the Reddit API to create a post.
+
+devvit.json
+`{
+  "permissions": {
+    "reddit": true
+  }
+}
+`
+
+## Use a text string​
+
+`import { reddit } from '@devvit/web/server';
+
+const post = await reddit.submitCustomPost({
+  title: 'Text String',
+  subredditName: subreddit.name,
+  textFallback: { text: 'You can read this text string on oldreddit because you used textFallback' },
+  entry: 'default',
+});
+`
+
+Result
+
+## Use a text string with markdown​
+
+`import { reddit } from '@devvit/web/server';
+
+const post = await reddit.submitCustomPost({
+  title: 'Text string with markdown',
+  subredditName: subreddit.name,
+  textFallback: {
+    text: 'You can read this _text string with markdown_ on oldreddit because you used **textFallback**',
+  },
+  entry: 'default',
+});
+`
+
+Result
+
+## Use rich text​
+
+`import { reddit } from '@devvit/web/server';
+
+const textFallbackRichtext = new RichTextBuilder()
+  .heading({ level: 1 }, (h) => {
+    h.rawText('Yay for text fallbacks!');
+  })
+  .codeBlock({}, (cb) => cb.rawText('You can read this rich text on old.reddit because you used textFallback'));
+
+const post = await reddit.submitCustomPost({
+  title: 'Rich Text',
+  subredditName: subreddit.name,
+  textFallback: { richtext: textFallbackRichtext },
+  entry: 'default',
+});
+`
+
+Result
+
+## Update a post’s text fallback​
+
+The post author can edit and update text fallback content after it’s been created. To do this, call post.setTextFallback with the desired fallback content.
+
+`import { reddit } from '@devvit/web/server';
+
+// from a menu action, form, scheduler, trigger, custom post click event, etc
+const newTextFallback = { text: 'This is an updated text fallback' };
+const post = await reddit.getPostById(context.postId);
+await post.setTextFallback(newTextFallback);
+`
