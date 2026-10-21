@@ -1,7 +1,7 @@
 # Setup
 
 How to get Super Bike Racing 1985 from this repo to a post you can play on
-the test subreddit, **r/decypher_game_dev**. Steps 1–6 happen once. Steps 7–9
+the test subreddit, **r/decyphergame_dev**. Steps 1–6 happen once. Steps 7–9
 are the everyday loop.
 
 Before changing the game, read
@@ -21,7 +21,7 @@ any new screen, read
       playable.
 - [x] The moderator menu offers the post kind **Super Bike Racing 1985**.
 - [x] `devvit.json`: app name `superbikeracing1985`, test subreddit
-      `decypher_game_dev`. **Check both in step 2.**
+      `decyphergame_dev`. **Check the app name in step 2.**
 - [x] `npm run type-check`, `check`, `build`, `check:crop` and `sim:crons`
       pass.
 
@@ -35,7 +35,7 @@ npm ci
 npx devvit login   # opens a browser; writes your token to ~/.devvit/token
 ```
 
-## 2. Check the two names
+## 2. Check the names
 
 Both are in `devvit.json`.
 
@@ -45,26 +45,25 @@ Both are in `devvit.json`.
   characters, starting with a letter, lowercase letters, numbers and hyphens
   only. If Reddit says it is taken, change it in **both** `devvit.json` and
   `package.json`, then run `npm install` and `npm ci`.
-- **`dev.subreddit`: `decypher_game_dev`.** No `r/`. If the subreddit is
-  spelled differently, fix it here.
+- **`dev.subreddit`: `decyphergame_dev`** (confirmed Oct 21). No `r/`.
 
 ## 3. The test subreddit
 
-You must be a **moderator** of r/decypher_game_dev. Devvit only installs on a
+You must be a **moderator** of r/decyphergame_dev. Devvit only installs on a
 subreddit you moderate, and only moderators see the menu that makes the post.
 A small private subreddit is ideal.
 
 ## 4. First run: install and make a post
 
 ```bash
-npm run dev        # = devvit playtest: builds, uploads, installs on r/decypher_game_dev
+npm run dev        # = devvit playtest: builds, uploads, installs on r/decyphergame_dev
 ```
 
 Leave it running while you test: it streams the app's logs. (If a code change
 does not show up in the post, run `npm run build` and reload.) Then, on
 reddit.com:
 
-1. Open r/decypher_game_dev.
+1. Open r/decyphergame_dev.
 2. Open the subreddit's **⋯ (mod) menu** and choose **Create a post**.
 3. Pick **Super Bike Racing 1985**, then **Next**.
 4. Keep or change the title, then **Create post**. Reddit takes you to the
@@ -90,11 +89,11 @@ Under GitHub → this repo → Settings → Secrets and variables → Actions, a
 | Kind | Name | Value |
 |---|---|---|
 | Secret | `DEVVIT_AUTH_TOKEN` | the entire contents of `~/.devvit/token` (step 1) |
-| Variable | `DEV_SUBREDDIT` | `decypher_game_dev` |
+| Variable | `DEV_SUBREDDIT` | `decyphergame_dev` |
 | Variable | `PROD_SUBREDDIT` | the live subreddit, without `r/` |
 
 There is no live subreddit yet. Until there is, set `PROD_SUBREDDIT` to
-`decypher_game_dev` too: the workflow refuses to run with it blank. Pushes only
+`decyphergame_dev` too: the workflow refuses to run with it blank. Pushes only
 upload; nothing installs anywhere unless you ask (step 9).
 
 Until the secret is set, every push to `main` or `dev` fails its workflow run
