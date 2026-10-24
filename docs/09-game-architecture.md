@@ -134,6 +134,12 @@ game page fits at 320×568, 375×667, 390×844, 844×390, 700×512, 900×600,
     a click on the screen is a press. The bezel fills the window and the
     screen sits in it as large as it fits, with the bezel's edge showing.
   - `handheld`: `game.html` on a phone. The original handheld with its D-pad.
+- **`game.html` sizes to what is really on screen.** It runs the template's
+  `trackVisibleHeight()` (`lib/visibleHeight.ts`, doc 01), which measures the
+  frame against the top-level viewport and keeps `--vis-h` current as a
+  phone browser's address bar comes and goes. `game.css` sizes the handheld
+  from it (`--room-h`), and `fitScreen()` reads it (`visibleHeight()`),
+  refitting on each change (`VIS_H_EVENT`), which can come with no `resize`.
 - **`game.html` opens on the title menu**, as a press during the intro video
   would. The video belongs to the inline post; LEFT on the menu still brings
   it back.

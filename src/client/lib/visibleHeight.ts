@@ -29,6 +29,15 @@ type VirtualKeyboardLike = {
   removeEventListener: (type: "geometrychange", fn: () => void) => void;
 };
 
+/** Fired on `window` each time `--vis-h` changes. */
+export const VIS_H_EVENT = "vis-h";
+
+/** The visible height in px: `--vis-h` once measured, the window's until then. */
+export function visibleHeight(): number {
+  const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--vis-h"));
+  return v > 0 ? Math.min(v, window.innerHeight) : window.innerHeight;
+}
+
 /** ~1% steps, so a change of a few px reports rather than waiting for 0. */
 const THRESHOLDS = Array.from({ length: 101 }, (_, i) => i / 100);
 
@@ -59,6 +68,10 @@ export function trackVisibleHeight(): () => void {
     if (v === last || v <= 0) return;
     last = v;
     host.style.setProperty("--vis-h", `${v}px`);
+    // A page that sizes itself in script (the game's canvas) hears it here: the
+    // reading can change with no resize event at all (the frame scrolled
+    // further under the host's chrome).
+    window.dispatchEvent(new Event(VIS_H_EVENT));
   };
 
   /**

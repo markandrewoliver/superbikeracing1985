@@ -60,9 +60,12 @@ import { presentSplash } from './attract/wide.js';
 import { HOST } from './core/host.js';
 import { game, menu } from './core/state.js';
 import { mountCrt } from './ui/crt.js';
+import { VIS_H_EVENT, trackVisibleHeight } from '../lib/visibleHeight';
 
 if (HOST !== 'splash') mountCrt(document.querySelector('.screen'));   // (the splash is under the app's glass)
+if (HOST !== 'splash') trackVisibleHeight();                         // (the splash is in the app, which tracks it already)
 window.addEventListener('resize', fitScreen);
+window.addEventListener(VIS_H_EVENT, fitScreen);
 fitScreen(); setTimeout(fitScreen, 300);
 
 let last = 0, accT = 0;

@@ -3,12 +3,13 @@
   --shell:#cdc8bf; --shell-hi:#dcd7ce; --shell-lo:#bdb7ad; --bezel:#545867; --bezel-d:#3c3f4b;
   --dpad:#2a2c32; --dpad-hi:#3a3d45; --dpad-lo:#17181c; --label:#2b3a8c; --turbo:#ffcf3a;
   --display:'Silkscreen',ui-monospace,monospace; --body:'Chakra Petch',system-ui,sans-serif;
-  --dp:clamp(170px,min(64vw,33vh),270px);
+  --room-h:min(var(--vis-h,100dvh),100dvh);   /* what is really on screen: lib/visibleHeight.ts measures --vis-h (the address bar, Reddit's own chrome) */
+  --dp:clamp(170px,min(64vw,calc(var(--room-h) * .33)),270px);
   color-scheme:light;
 }
 html,body{height:100%}
 body{margin:0;background:linear-gradient(180deg,var(--shell-hi),var(--shell) 30%,var(--shell-lo));color:var(--label);font-family:var(--body);-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
-.device{box-sizing:border-box;width:100%;max-width:640px;min-height:100%;margin:0 auto;padding:max(10px,env(safe-area-inset-top)) 10px max(14px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
+.device{box-sizing:border-box;width:100%;max-width:640px;height:var(--room-h);margin:0 auto;padding:max(10px,env(safe-area-inset-top)) 10px max(14px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
 .bezel{padding:8px 8px 6px;border-radius:10px 10px 28px 10px;background:linear-gradient(180deg,var(--bezel),var(--bezel-d));box-shadow:inset 0 2px 6px rgba(0,0,0,.45),0 1px 0 rgba(255,255,255,.5)}
 .screen{position:relative;border-radius:3px;overflow:hidden;background:#000;box-shadow:0 0 0 2px #22242b}
 canvas{display:block;width:100%;height:auto;image-rendering:auto;touch-action:none}   /* (no pixel filter: scaled up smooth; the sprites keep their edges through RotSprite) */
@@ -35,7 +36,7 @@ canvas{display:block;width:100%;height:auto;image-rendering:auto;touch-action:no
    height can be well short of a phone's. The bezel's width sets the screen's height, so cap the width at what leaves
    room for the D-pad: 56px of padding, gap and bezel, plus the pad, with the canvas at its shortest (240x150).
    fitScreen() then grows the canvas upward into whatever is left. Nothing on this page scrolls. */
-.device{max-width:min(640px,calc((100dvh - 60px - var(--dp)) * 1.6 + 36px))}
+.device{max-width:min(640px,calc((var(--room-h) - 60px - var(--dp)) * 1.6 + 36px))}
 html,body{overflow:hidden}
 
 /* Desktop (data-host="desktop", set by core/host.js): the keyboard drives it, so no D-pad. The bezel fills the
@@ -43,7 +44,7 @@ html,body{overflow:hidden}
    the bezel's 10px edge showing. Until the host is known, the controls stay hidden rather than flash. */
 html:not([data-host]) .controls{visibility:hidden}
 html[data-host="desktop"] .controls{display:none}
-html[data-host="desktop"] .device{max-width:none;height:100%;padding:0}
+html[data-host="desktop"] .device{max-width:none;padding:0}
 html[data-host="desktop"] .bezel{flex:1;display:flex;align-items:center;justify-content:center;padding:8px;border-radius:0}
 html[data-host="desktop"] .screen{flex:0 0 auto}
 html[data-host="desktop"] canvas:not([data-sized]){visibility:hidden}
