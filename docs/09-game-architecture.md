@@ -171,8 +171,14 @@ it, from the owner's Workshop, and change what is drawn on purpose:
   8x picture. `rotFrame()` (bikes and riders in the air), the title rider and
   the podium figures all go through it, cached by frame.
 - **The podium figures** are drawn from `ui/podium.js` (`podFigure`), and each
-  racer wears their wipeouts (`wipeouts` in `race/rivals.js`).
-- **Heads and bodies.** Three heads in `art/riders.js` (`K_HEADS`), and a BODY
+  racer wears their wipeouts: an arm cast, a leg cast on a crutch, then both
+  (`podLevel`). A big crash, the rider coming to rest 60 m or more from where
+  he came off (`BIG_CRASH_M`), counts twice. One thrown out of shot is run on
+  to where he would have stopped (`restX` in `race/crash.js`).
+- **Off the bike, standing still** is side on for every head (`sideStand` in
+  `art/riders.js`); it was a front-facing body under a profile head.
+- **Heads and bodies.** Three heads in `art/riders.js` (`K_HEADS`), the
+  professor's replacing the first one, and a BODY
   row in Edit Player, drawn from `art/bodies.js` and painted by the hooks in
   `gfx/riderSprites.js` (`BODY_PAINT`).
 - **Six drawn rides** in `art/rides.js`: superbike, chopper, bicycle, horse,

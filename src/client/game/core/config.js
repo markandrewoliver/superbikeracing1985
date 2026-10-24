@@ -7,6 +7,7 @@ export const SC = 0.5;                        // screen px per world px
 export const LANE_SY = [70, 88, 106, 124];    // wheel line of each lane on screen, back (0) to front (3)
 export const BIKE_SX = 56;                    // fixed screen x of the bike
 export const PX_M = 8;                        // world px per metre
+export const BIG_CRASH_M = 60;                // a rider thrown this far (m) has had a big crash: it counts twice toward the podium casts
 export const G = 230;                         // gravity, px/s^2
 export const STEP = 1 / 120;                  // fixed physics step
 export const CRUISE0 = 250;                   // default speed in px/s (about 100 kph); this used to be turbo speed

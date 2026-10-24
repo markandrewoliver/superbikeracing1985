@@ -1,7 +1,7 @@
 // Coming off: the crash itself, the bike and rider tumbling apart, and getting back on.
 
 import { sfx } from '../audio/sound.js';
-import { BIKE_SX, G, SC, W } from '../core/config.js';
+import { BIG_CRASH_M, BIKE_SX, G, PX_M, SC, W } from '../core/config.js';
 import { P } from '../core/palette.js';
 import { ATT, game, race, view } from '../core/state.js';
 import { clamp, rnd, wrapPi } from '../core/util.js';
@@ -57,6 +57,7 @@ function hingeTick(c, dt) {
   const still = H.landed && q1.vy === 0 && Math.abs(q1.vx) < 5 && q0.ground && q0.vx < 5 && Math.abs(q0.rv) < 0.5;
   if ((still && game.stateT > 0.6) || game.stateT > 6) {
     if (!H.landed) { H.landed = true; H.landT = game.stateT; q1.x = H.cx; c.lieM = 1; H.la = Math.PI / 2; }
+    if (bigThrow(c.x0, q1.x)) race.bigCrashes++;
     c.t0 = game.stateT; for (const q of c.bodies) { q.vx = 0; q.vy = 0; q.rv = 0; q.h = terrain(lane, q.x); }
     q0.rot = slopeAt(lane, q0.x); q1.rot = Math.PI / 2;
     const edgeR = view.camX + (W + 16 - BIKE_SX) / SC, edgeL = view.camX - (BIKE_SX + 16) / SC;   // (as in any wipeout: out of shot, he's already up and walks straight back in)
@@ -66,6 +67,21 @@ function hingeTick(c, dt) {
   }
   view.camX += (q0.x - view.camX) * Math.min(1, 3 * dt);                    // the camera stays on the bike, as in any wipeout
 }
+
+// Where a tumbling body would come to rest, run on with the tumble's own physics (for one thrown out of shot, which
+// stops being moved at the screen edge).
+function restX(q, lane) {
+  const p = { ...q }, dt = 1 / 60;
+  for (let k = 0; k < 8 * 60; k++) {
+    p.vy -= G * dt; p.h += p.vy * dt; p.x += p.vx * dt;
+    const g = terrain(lane, p.x);
+    if (p.h <= g) { p.h = g; if (p.vy < -30) p.vy *= -0.35; else p.vy = 0; p.vx *= Math.max(0, 1 - 2.6 * dt); }
+    if (p.h <= g + 0.5 && Math.abs(p.vx) <= 45) break;
+  }
+  return p.x;
+}
+// A big crash: the rider came to rest BIG_CRASH_M or more from where he came off.
+export const bigThrow = (x0, x1) => Math.abs(x1 - x0) >= BIG_CRASH_M * PX_M;
 
 export function crash(why, quiet) {
   if (ATT.on && ATT.noCrash && game.state === 'play') return;           // (the intro video: no crashing)
@@ -89,6 +105,7 @@ export function crash(why, quiet) {
       { x: b.x, h: b.h + 14, vx: b.v * 0.62, vy: Math.max(b.vy, 0) + 110, rot: b.angle, rv: dir * 10 }
     ]
   };
+  b.crash.x0 = b.x;
   if (inRdm) { b.crash.rdmFall = true; Object.assign(b.crash.bodies[1], { h: b.h, vx: b.v * 0.5, vy: Math.max(b.vy, 0) + 60, rot: b.angle, rv: dir * 3 }); }   // he goes over from his Redeemer
   if (mj) Object.assign(b.crash.bodies[1], { x: b.x + mj.dx, h: mj.h, vx: b.v * 0.62 + mj.vx, vy: mj.vy, rot: mj.a, rv: dir * 2.5 });   // he wasn't on it: he just carries on from where he is and comes down
   if (why === 'SPLASH') { b.crash.splash = riverAt(b.x, b.lane); b.crash.t = 0; sfx('mud'); return; }
@@ -138,7 +155,7 @@ export function tickCrash(dt) {
   if (c.t0 === undefined) {                                    // tumbling
     let moving = false;
     const edgeR = view.camX + (W + 16 - BIKE_SX) / SC, edgeL = view.camX - (BIKE_SX + 16) / SC;   // just past the screen edges
-    if (!c.offR && (q1.x > edgeR || q1.x < edgeL)) { c.offR = q1.x > edgeR ? 1 : -1; q1.vx = q1.vy = q1.rv = 0; }   // flew out of shot: he'll walk back in
+    if (!c.offR && (q1.x > edgeR || q1.x < edgeL)) { c.offR = q1.x > edgeR ? 1 : -1; c.restX = restX(q1, bike.lane); q1.vx = q1.vy = q1.rv = 0; }   // flew out of shot: he'll walk back in
     if (c.offR) { q1.x = c.offR > 0 ? Math.max(q1.x, edgeR) : Math.min(q1.x, edgeL); q1.h = terrain(bike.lane, q1.x); }
     for (const q of c.bodies) {
       if (q === q1 && c.offR) continue;
@@ -155,6 +172,7 @@ export function tickCrash(dt) {
     clearWreck(c.bodies, bike.lane);
     if ((!moving && game.stateT > 0.6) || game.stateT > 8) {                 // let the wipeout play out until it all comes to rest
       c.t0 = game.stateT;
+      if (bigThrow(c.x0, c.offR ? c.restX : q1.x)) race.bigCrashes++;
       for (const q of c.bodies) { q.vx = 0; q.vy = 0; q.rv = 0; q.h = terrain(bike.lane, q.x); }
       if (c.offR) {                                              // already up off-camera: he comes walking straight back in
         q1.x = c.offR > 0 ? q0.x + (W + 16 - BIKE_SX) / SC : q0.x - (BIKE_SX + 16) / SC;

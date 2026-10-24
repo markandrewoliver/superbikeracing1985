@@ -23,10 +23,10 @@ import { drawResMenu } from './overlay.js';
 // still racing gets an estimate from their average speed so far). The winner does a random celebration, second place
 // a slow clap, third (and fourth, beside the podium) stands with arms crossed. Front-facing heads, in people letters.
 // Each racer wears that race's wipeouts (Super Bike Workshop, section 3): podLevel() of them, 0 fine, 1 an arm in a
-// cast and sling, 2 a leg in a cast on one crutch, 3 both, 4 an arm and both legs, in a wheelchair.
-// POD_PAL: the podium's own fixed colours (champagne bottle, casts W/w, sling L, crutch K/k, wheelchair V, tyre Y/y).
-export const POD_PAL = { q: '#00a800', Q: '#006800', W: '#f4f2ea', w: '#c4c2b8', L: '#d8c8a0', K: '#b4bcc8', k: '#3c3c48', V: '#7c8490', Y: '#24242c', y: '#a4acb8' };
-export const podLevel = (wipeouts) => Math.min(4, wipeouts || 0);
+// cast and sling, 2 a leg in a cast on one crutch, 3 both. (There was a fourth, in a wheelchair: the owner took it out.)
+// POD_PAL: the podium's own fixed colours (champagne bottle, casts W/w, sling L, crutch K/k).
+export const POD_PAL = { q: '#00a800', Q: '#006800', W: '#f4f2ea', w: '#c4c2b8', L: '#d8c8a0', K: '#b4bcc8', k: '#3c3c48' };
+export const podLevel = (wipeouts, big) => Math.min(3, (wipeouts || 0) + (big || 0));   // (a big crash counts twice: race/crash.js)
 function podLine(x0, y0, x1, y1) {
   const pts = [], dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let e = dx + dy;
   for (;;) { pts.push([x0, y0]); if (x0 === x1 && y0 === y1) break; const e2 = 2 * e; if (e2 >= dy) { e += dy; x0 += sx; } if (e2 <= dx) { e += dx; y0 += sy; } }
@@ -50,23 +50,11 @@ function podSpec(anim, t, hh) {
 export function podFigure(anim, t, head, lvl = 0, body = 'rider') {
   const g = new Map(), put = (x, y, c) => g.set(x + ',' + y, c), hd = FRONT_HEADS[head] || FRONT_HEADS.helmet, hh = hd.length, S = podSpec(anim, t, hh);
   const B = FRONT_BODY[body] || FRONT_BODY.rider, sleeve = B.sleeve;   // (long sleeves: shirt colour on every arm pixel but the hand)
-  const sling = lvl === 1 || lvl === 3 || lvl === 4, crutch = lvl === 2 || lvl === 3, chair = lvl >= 4;
+  const sling = lvl === 1 || lvl === 3, crutch = lvl === 2 || lvl === 3;
   let ox = S.dx || 0, oy = S.dy || 0;
-  const lift = chair ? (Math.max(0, -(S.air || 0)) >> 1) + (S.dy && !S.air && anim === 'hands' ? 1 : 0) : 0;   // a wheelie: the whole chair bounces up
-  if (chair) { oy = -lift; ox = S.rock || 0; }
   if (crutch) { ox = 0; oy = S.air ? Math.max(-2, Math.round(S.air / 2)) : (S.dy || 0); }   // hops, small ones
-  if (chair) {                                                      // the wheelchair, behind him: big wheels side on to us, tyre outside, rim inside
-    const cx = S.rock || 0;
-    for (const wx of [-2, 9]) for (let y = 1; y <= 9; y++) for (const dx of [0, 1]) put(cx + wx + dx, y - lift, (y === 1 || y === 9) ? 'Y' : dx === (wx < 0 ? 1 : 0) ? 'y' : 'Y');
-    for (const hx of [-1, 9]) { put(cx + hx, -2 - lift, 'V'); put(cx + hx, -1 - lift, 'V'); }
-  }
   B.rows.forEach((r, y) => { for (let x = 0; x < 9; x++) if (r[x] !== '.') put(ox + x, oy + y, r[x]); });
-  if (chair) {                                                      // seat edge, both legs in casts down to the footrest
-    for (let x = 0; x <= 8; x++) put(ox + x, oy + 6, 'V');
-    for (const lx of [2, 5]) { put(ox + lx, oy + 6, 'W'); put(ox + lx + 1, oy + 6, 'w'); put(ox + lx, oy + 7, 'W'); put(ox + lx + 1, oy + 7, 'w'); }
-    for (const lx of [1, 5]) { put(ox + lx, oy + 8, 'W'); put(ox + lx + 1, oy + 8, 'W'); put(ox + lx + 2, oy + 8, 'w'); }
-    for (let x = 0; x <= 8; x++) put(ox + x, oy + 9, 'V');
-  } else if (crutch) {                                              // on one leg; the cast leg held up off the ground
+  if (crutch) {                                              // on one leg; the cast leg held up off the ground
     for (let y = 6; y <= 8; y++) { put(ox + 2, oy + y, 'p'); put(ox + 3, oy + y, 'p'); }
     put(ox + 2, oy + 9, 'd'); put(ox + 3, oy + 9, 'd');
     for (let y = 6; y <= 7; y++) { put(ox + 6, oy + y, 'W'); put(ox + 7, oy + y, 'w'); }
@@ -152,7 +140,7 @@ const POD_WIN = [['hands', 3], ['trophy', 4], ['champagne', 6], ['dance', 5], ['
 export function startPodium() {                                           // everyone's final time (an estimate for anyone not home yet), best first
   for (const o of bots) if (!o.done) { const avg = Math.max(20, (o.x - race.startX) / Math.max(0.1, race.raceT)); o.done = race.raceT + Math.max(0, finishX() - o.x) / avg; }
   const myHead = LOOK_HEADS[look.head];
-  const all = [{ name: 'YOU', th: 0, head: myHead, t: race.finishT, col: P.white, lvl: podLevel(race.crashes) }].concat(bots.map(o => ({ name: o.name, th: o.theme, head: o.theme === 0 ? myHead : (KTHEMES[o.theme].head || 'helmet'), t: o.done, col: THEME_SUIT[o.theme], lvl: podLevel(o.wipeouts) })));
+  const all = [{ name: 'YOU', th: 0, head: myHead, t: race.finishT, col: P.white, lvl: podLevel(race.crashes, race.bigCrashes) }].concat(bots.map(o => ({ name: o.name, th: o.theme, head: o.theme === 0 ? myHead : (KTHEMES[o.theme].head || 'helmet'), t: o.done, col: THEME_SUIT[o.theme], lvl: podLevel(o.wipeouts, o.bigWipeouts) })));
   all.sort((a, b) => a.t - b.t);
   race.podium = { all, win: POD_WIN[Math.floor(Math.random() * POD_WIN.length)], cx: view.camX };
 }

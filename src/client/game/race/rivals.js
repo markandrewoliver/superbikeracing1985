@@ -5,7 +5,7 @@ import { CRUISE0, G, LANES, PX_M } from '../core/config.js';
 import { ATT, game, race, view } from '../core/state.js';
 import { clamp, rnd } from '../core/util.js';
 import { ghostTick } from '../modes/replay.js';
-import { crash } from './crash.js';
+import { bigThrow, crash } from './crash.js';
 import { bike, finishX, fx } from './session.js';
 import { tooHigh } from '../rider/physics.js';
 import { SURF } from '../world/settings.js';
@@ -27,7 +27,7 @@ export function resetBots(lanes) {
     name: r.name, theme: r.theme, skill: r.skill, x: race.startX, v: 0, lane: lanes[i], laneF: lanes[i], laneT: lanes[i],
     h: 0, hv: 0, vy: 0, grounded: true, angle: 0, rel: 0, wB: 0, wheelieT: 0, tStack: [], turbo: 0, mud: false,
     hits: new Set(), wobbleT: 0, hitCD: 0, think: rnd(0.3, 0.6), spin: 0, landT: 0, crash: null, done: 0, loop: null, loopDX: 0,
-    wipeouts: 0                                                    // (this race's: the podium shows them as casts)
+    wipeouts: 0, bigWipeouts: 0                                                   // (this race's: the podium shows them as casts)
   }));
 }
 function riderAheadIn(o, l, range) {
@@ -71,7 +71,7 @@ function botChooseLane(o) {
 export function botCrash(o, splash) {
   if (ATT.on && ATT.noBotCrash) return;
   o.wipeouts = (o.wipeouts || 0) + 1;
-  o.crash = { t: 0, splash: splash ? riverAt(o.x, o.lane) : null, bodies: [
+  o.crash = { t: 0, x0: o.x, splash: splash ? riverAt(o.x, o.lane) : null, bodies: [
     { x: o.x, h: o.h, vx: o.v * 0.45, vy: Math.max(o.vy, 60), rot: o.angle, rv: 7 },
     { x: o.x, h: o.h + 14, vx: o.v * 0.62, vy: Math.max(o.vy, 0) + 110, rot: o.angle, rv: 10 }
   ] };
@@ -90,7 +90,7 @@ export function botCrashTick(o, dt) {
       if (q.h > g + 0.5 || Math.abs(q.vx) > 45 || Math.abs(q.rv) > 3) moving = true;
     }
     clearWreck(c.bodies, o.lane);
-    if ((!moving && c.t > 0.6) || c.t > 8) { c.ts = c.t; for (const q of c.bodies) { q.vx = q.vy = q.rv = 0; q.h = terrain(o.lane, q.x); } c.rot0 = c.bodies[0].rot; }
+    if ((!moving && c.t > 0.6) || c.t > 8) { c.ts = c.t; if (bigThrow(c.x0, c.bodies[1].x)) o.bigWipeouts = (o.bigWipeouts || 0) + 1; for (const q of c.bodies) { q.vx = q.vy = q.rv = 0; q.h = terrain(o.lane, q.x); } c.rot0 = c.bodies[0].rot; }
     return;
   }
   if (c.t - c.ts > 1.6) {

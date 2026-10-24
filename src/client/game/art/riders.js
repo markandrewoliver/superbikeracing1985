@@ -32,6 +32,23 @@ Object.assign(K_HEADS, {
   prof: { art: ['...SSS..', '.GGSsss.', '.GSssea.', '.GSsssss', '..GWWWW.', '..GWWGW.', '...WWWW.', '...WWW..', '....W...'], ax: -4, ay: -5 },
   flag_us: { art: ['..uuuu..', '.ufuufuu', '.XXXVVVv', '.fffVVV.', '..XXXX..'], ax: -3, ay: -5 }
 });
+// Standing still, side on (it was a front-facing body under a profile head). The body below the head is the same for
+// every head, so each head's stand is its walk0 with the walking body swapped for this one; whatever of the head hangs
+// over the body (long hair, a beard) stays on top.
+const STAND_BODY = ['.SSss..', '.SSss..', '.sSss..', '.sSss..', '.sSis..', '.ppiP..', '.ppPP..', '.ppPP..', '.ppPP..', '.dddee.'];
+function sideStand(walk) {
+  const T = K_PEOPLE.helmet.walk0.slice(-10), n = walk.length - 10, dx = walk[walk.length - 1].indexOf('dddee') - T[9].indexOf('dddee');
+  const w = Math.max(walk[0].length, dx + STAND_BODY[0].length);
+  return walk.map((r, y) => {
+    const row = r.padEnd(w, '.').split('');
+    if (y < n) return row.join('');
+    const t = T[y - n], b = STAND_BODY[y - n];
+    for (let x = 0; x < w; x++) { const tc = t[x - dx] || '.'; if (row[x] === tc) row[x] = b[x - dx] || '.'; }   // (what differs from the walking body is the head's)
+    return row.join('');
+  });
+}
+for (const set of Object.values(K_PEOPLE)) set.stand = sideStand(set.walk0);
+
 // Their off-bike sprites, DRAFTED from the helmet's: the helmet's body, head swapped (art row r sits r + ay rows from
 // the shoulder line, as on the bike; rows at or below the shoulder lie over the body). Lying down is drawn by hand:
 // the helmet's body, the head on its back, crown to the left.

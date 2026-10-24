@@ -17,7 +17,7 @@ export const FRONT_BODY = {
 // pixels per pose, placed against the helmet's body rows, dresses every head. [x, y, letter], y from the top body row.
 export const BODY_DETAIL = {
   prof: {                                                            // collar (light-blue shirt), red tie, coat tails over the hips
-    stand: [[3, 0, 'a'], [4, 0, 'l'], [5, 0, 'a'], [4, 1, 'l'], [4, 2, 'l'], [4, 3, 'l'], [3, 1, 'S'], [5, 1, 'S'], [2, 5, 's'], [6, 5, 's']],
+    stand: [[3, 0, 'a'], [4, 0, 'l'], [4, 1, 'l'], [4, 2, 'l'], [1, 5, 's'], [1, 6, 'S']],
     walk0: [[3, 0, 'a'], [4, 0, 'l'], [4, 1, 'l'], [4, 2, 'l'], [1, 5, 's'], [1, 6, 'S']],
     walk1: [[6, 0, 'a'], [7, 0, 'l'], [7, 1, 'l'], [7, 2, 'l'], [4, 5, 's'], [3, 6, 'S'], [4, 6, 's']],
     sit:   [[3, 0, 'a'], [4, 0, 'l'], [4, 1, 'l'], [4, 2, 'l']],
@@ -26,7 +26,7 @@ export const BODY_DETAIL = {
     rag:   [[6, 0, 'a'], [7, 0, 'l'], [7, 1, 'l'], [7, 2, 'l'], [4, 5, 's'], [4, 6, 'S']]
   },
   leather: {                                                         // white T-shirt at the neck, silver zip down the front
-    stand: [[4, 0, 'c'], [4, 1, 'c'], [4, 2, 'g'], [4, 3, 'g'], [4, 4, 'g']],
+    stand: [[4, 0, 'c'], [4, 1, 'c'], [4, 2, 'g'], [4, 3, 'g']],
     walk0: [[4, 0, 'c'], [4, 1, 'c'], [4, 2, 'g'], [4, 3, 'g']],
     walk1: [[7, 0, 'c'], [7, 1, 'c'], [7, 2, 'g'], [7, 3, 'g']],
     sit:   [[4, 0, 'c'], [4, 1, 'c'], [4, 2, 'g']],

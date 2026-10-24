@@ -16,7 +16,7 @@ import { spawnTraffic, traffic } from '../world/traffic.js';
 game.state = 'title';                 // title | intro | count | play | crash | finish
 game.stateT = 0; game.tNow = 0; view.camX = 0; view.titleScroll = 0;
 race.podium = null;                   // the finish podium (see drawPodium)
-race.crashes = 0; race.startX = 0; race.best = 0; race.maxMeters = 0; race.topSpeed = 0; let pruneT = 0;
+race.crashes = 0; race.bigCrashes = 0; race.startX = 0; race.best = 0; race.maxMeters = 0; race.topSpeed = 0; let pruneT = 0;
 try { race.best = Number(localStorage.getItem('four-lane-scramble-best-time')) || 0; } catch (e) {}
 race.raceT = 0; race.finishT = 0;
 race.raceM = 2000;                           // race length in metres (random tracks are 2000; built ones vary)
@@ -53,7 +53,7 @@ export function newGame(built, stunt, opts) {
   resetBike(0, 0, 2);
   race.startX = 0; world.cursor = 560; view.camX = 0; view.camLag = 0;
   if (built) { genWith(() => compileTrack(built)); game.mode = 'race'; } else ed.fromBuilder = false;
-  race.crashes = 0; race.maxMeters = 0; race.topSpeed = 0; race.raceT = 0; race.finishT = 0;
+  race.crashes = 0; race.bigCrashes = 0; race.maxMeters = 0; race.topSpeed = 0; race.raceT = 0; race.finishT = 0;
   fx.popups.length = 0; fx.parts.length = 0;
   resetBots([0, 1, 3]);
   game.stuntScore = 0; game.stuntLineSet = false; menu.resSel = 0; game.ghostRun = null; race.podium = null;
