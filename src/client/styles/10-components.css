@@ -109,7 +109,8 @@
 }
 .race-splash canvas {
   display: block;
-  image-rendering: pixelated;
+  /* No pixel filter: the screen is scaled up smooth, as in the game. */
+  image-rendering: auto;
 }
 /* Until the game has sized it, the canvas would draw at 240x150 and then
    jump: a layout shift on every load. */

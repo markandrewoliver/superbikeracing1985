@@ -7,12 +7,22 @@ import { W } from '../core/config.js';
 import { ATT, game, menu } from '../core/state.js';
 import { wideWords } from '../attract/wide.js';
 import { imgOk } from '../gfx/backdrop.js';
+import { rotSprite } from '../gfx/pixel.js';
 
 const SPLASH_W = 120, SPLASH_H = 155;                              // the picture's own pixels; each is 2 screen pixels at full size
 export const splashImg = {}, splashWhite = {};
 for (const k in SPLASH_ART) { if (typeof Image === 'undefined') break; splashImg[k] = loadImg(SPLASH_ART[k]); }
 export const SPLASH_T = { draw: [0.3, 1.3], rider: [1.7, 2.4], bike: [1.7, 2.25], sup: [2.3, 2.85], year: [2.9, 3.45] };   // seconds
 export const splashOk = () => { for (const k in SPLASH_ART) if (!imgOk(splashImg[k])) return false; return true; };
+// The rider leaping through the sun, through RotSprite like every other sprite (upright: the lean is in the art),
+// at the screen's 240x310. Made once, after the picture has loaded.
+let riderRS = null;
+export function titleRider() {
+  if (riderRS) return riderRS;
+  const t = document.createElement('canvas'); t.width = 240; t.height = 310; t.ax = 0; t.ay = 0;
+  const g = t.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(splashImg.rider, 0, 0, 240, 310);
+  return (riderRS = rotSprite(t, 0, 240, 310, 0, 0));
+}
 function splashWhiteOf(k) {                                         // a solid white copy of a layer, for the flash as a word lands
   if (splashWhite[k]) return splashWhite[k];
   const im = splashImg[k], c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d');
@@ -47,7 +57,7 @@ export function drawTitleArt(t) {                                          // t 
   const Hc = cv.height, sc = 1, px = 2, dw = 240, dh = 310, x0 = Math.round((W - dw) / 2), y0 = Hc >= dh ? Hc - dh : -26;   // a tall screen keeps the city at the bottom; a short one shows just the title, lifted clear of the menu
   const crisp = true;
   const put = (k, dx, dy, flash) => { ctx.imageSmoothingEnabled = !(crisp && (k === 'bg' || k === 'rider')); if (k !== 'bg' && k !== 'rider') dx -= 4;   // (the words: centred on BIKE RACING's yellow faces, not on their shadow)
-    ctx.drawImage(flash ? splashWhiteOf(k) : splashImg[k], x0 + Math.round(dx) * px, y0 + Math.round(dy) * px, dw, dh); };
+    ctx.drawImage(flash ? splashWhiteOf(k) : k === 'rider' ? titleRider() : splashImg[k], x0 + Math.round(dx) * px, y0 + Math.round(dy) * px, dw, dh); };
   const flashing = (v) => v >= 0.55 && v < 0.55 + 2 / (30 * 0.55);
   if (sp >= T.draw[0]) {                                              // drawn in like an old computer loading a picture: left to right, row by row, in bursts
     const total = SPLASH_W * SPLASH_H, done = titleDone(t);

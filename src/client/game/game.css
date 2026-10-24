@@ -11,7 +11,7 @@ body{margin:0;background:linear-gradient(180deg,var(--shell-hi),var(--shell) 30%
 .device{box-sizing:border-box;width:100%;max-width:640px;min-height:100%;margin:0 auto;padding:max(10px,env(safe-area-inset-top)) 10px max(14px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
 .bezel{padding:8px 8px 6px;border-radius:10px 10px 28px 10px;background:linear-gradient(180deg,var(--bezel),var(--bezel-d));box-shadow:inset 0 2px 6px rgba(0,0,0,.45),0 1px 0 rgba(255,255,255,.5)}
 .screen{border-radius:3px;overflow:hidden;background:#000;box-shadow:0 0 0 2px #22242b}
-canvas{display:block;width:100%;height:auto;image-rendering:pixelated;touch-action:none}
+canvas{display:block;width:100%;height:auto;image-rendering:auto;touch-action:none}   /* (no pixel filter: scaled up smooth; the sprites keep their edges through RotSprite) */
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .brand{margin:2px 4px 0;font:700 italic clamp(13px,4vw,17px)/1 var(--body);letter-spacing:.02em;color:var(--label);text-transform:uppercase}
 .brand b{font-family:var(--display);font-style:normal;font-weight:700;letter-spacing:.06em}

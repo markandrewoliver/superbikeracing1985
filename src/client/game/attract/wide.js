@@ -19,7 +19,7 @@ import { cv, roomExtra, setTallRoom } from '../core/canvas.js';
 import { ATT } from '../core/state.js';
 import { attEase } from './attract.js';
 import { ATT_SCENES } from './scenes.js';
-import { splashImg, splashOk, titleArtT, titleRiderAt, titleRowsDrawn } from '../ui/title.js';
+import { splashImg, splashOk, titleArtT, titleRider, titleRiderAt, titleRowsDrawn } from '../ui/title.js';
 
 const TALL = new Set(['title', 'pan', 'go']);
 const NIGHT = '#140c3c';
@@ -59,7 +59,6 @@ function layer(key, draw) {
   const g = c.getContext('2d'); draw(g);
   return (cache[key] = c);
 }
-const riderLayer = () => layer('rider', (g) => { g.imageSmoothingEnabled = false; g.drawImage(splashImg.rider, 0, 0, 240, 310); });
 const wordsLayer = () => layer('words', (g) => { g.imageSmoothingEnabled = true; for (const k of ['bike', 'super', 'n1985']) g.drawImage(splashImg[k], 0, 0, 240, 310); });
 
 // One frame, after the game has drawn its own.
@@ -75,7 +74,7 @@ export function presentSplash() {
     post.width = Math.round(Wp * dpr); post.height = Math.round(Hp * dpr); post.style.width = Wp + 'px'; post.style.height = Hp + 'px';
   }
   cv.style.display = 'none'; post.style.display = 'block';
-  pg.setTransform(dpr, 0, 0, dpr, 0, 0); pg.imageSmoothingEnabled = false;
+  pg.setTransform(dpr, 0, 0, dpr, 0, 0); pg.imageSmoothingEnabled = true;   // (no pixel filter: the screen is scaled up smooth, as game.css does)
   pg.fillStyle = NIGHT; pg.fillRect(0, 0, Wp, Hp);
   if (!tallNow()) {                                                  // a scene on the post's own shape: the canvas fills it
     const s = Math.min(Wp / 240, Hp / cv.height);
@@ -103,5 +102,5 @@ function drawSides(Wp, x0, y0, s) {
     pg.restore();
   }
   const r = titleRiderAt(t);
-  if (r) pg.drawImage(riderLayer(), x0 + Math.round(r.dx) * 2 * s, y0 + Math.round(r.dy) * 2 * s, w, 310 * s);
+  if (r) pg.drawImage(titleRider(), x0 + Math.round(r.dx) * 2 * s, y0 + Math.round(r.dy) * 2 * s, w, 310 * s);
 }
