@@ -17,10 +17,14 @@ reference, never edited, never built.
 
 ## Never
 
-- **Never make a push install an app version.** Push → upload only; installing
-  is a manual `workflow_dispatch` with an explicit `install_version`. Approval is
-  per version, and an unapproved install silently makes `runAs: "USER"` post as
-  the app account for everyone but the owner.
+- **Never make a push to `main` install an app version.** Push → upload only;
+  installing on the live subreddit is a manual `workflow_dispatch` with an
+  explicit `install_version`. Approval is per version, and an unapproved install
+  silently makes `runAs: "USER"` post as the app account for everyone but the
+  owner. The one exception: a push to `dev` uploads **and installs on the dev
+  subreddit**, which is safe only because this app never posts with
+  `runAs: "USER"`. Adding `runAs: "USER"` means taking that exception out of
+  `deploy.yml` in the same change.
 - **Never run `npx devvit publish` from a tree you have not checked** against
   what was tested: `git status --porcelain` empty and
   `git rev-parse HEAD origin/dev` matching. If they differ, say so and stop.

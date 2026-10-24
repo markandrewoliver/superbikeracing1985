@@ -104,9 +104,9 @@ Under GitHub → this repo → Settings → Secrets and variables → Actions, a
 | Variable | `DEV_SUBREDDIT` | `decyphergame_dev` |
 | Variable | `PROD_SUBREDDIT` | the live subreddit, without `r/` |
 
-There is no live subreddit yet. Until there is, set `PROD_SUBREDDIT` to
-`decyphergame_dev` too: the workflow refuses to run with it blank. Pushes only
-upload; nothing installs anywhere unless you ask (step 9).
+There is no live subreddit yet, so leave `PROD_SUBREDDIT` unset for now. A
+push to `dev` does not need it; a push to `main` stops with a message asking
+for it, which is the right answer until there is somewhere live to ship.
 
 Until the secret is set, every push to `main` or `dev` fails its workflow run
 before it builds anything. That includes the pushes so far.
@@ -137,8 +137,10 @@ here**, is in `src/client/lib/copy.ts`.
 
 ## 9. Ship a version
 
-Pushing to `dev` or `main` **uploads** a new version and installs nothing. To
-install one:
+**Pushing to `dev` uploads a new version and installs it on
+r/decyphergame_dev**: the Actions tab shows the version, and the post picks it
+up on reload. Pushing to `main` **uploads only**. To install a particular
+version by hand (the live subreddit, or an older build on the test one):
 
 1. Find the version number in the push's workflow run (`0.0.N`).
 2. Actions → *Deploy to Devvit* → **Run workflow** on the branch:

@@ -19,15 +19,21 @@
 
 | Trigger | What happens |
 |---|---|
-| push to `dev` or `main` | `npm run check`, type-check, build, **upload a new version**. Nothing is installed. |
+| push to `main` | `npm run check`, type-check, build, **upload a new version**. Nothing is installed. |
+| push to `dev` | the same, then **install that version on the dev subreddit** (retrying while Reddit finishes processing it) |
 | manual, `install_version` = `0.0.N` | install that version on the branch's subreddit (`main` → prod, `dev` → dev) |
 | manual, `report_only` | print `devvit list installs` for both subreddits and do nothing else |
 
 The report also runs after every install, as independent confirmation.
 
-**Never change this so that a push installs.** Approval is per version; an
-unapproved install silently breaks user attribution. Which build a subreddit
-runs should be something a person chose.
+**Never change this so that a push to `main` installs.** Approval is per
+version; an unapproved install silently breaks user attribution. Which build
+the live subreddit runs should be something a person chose.
+
+The dev subreddit is the exception, because a push to `dev` is a test build
+and this app never posts with `runAs: "USER"`, the one thing an unapproved
+version breaks. If the app ever adds `runAs: "USER"`, take the dev
+auto-install out of `deploy.yml` in the same change.
 
 ## Publishing for review
 

@@ -1,8 +1,14 @@
 name: Deploy to Devvit
 
-# Pushing builds and uploads a new app version. It does NOT change what any
-# subreddit is running — neither production nor dev. Installing is always a
-# deliberate, manual step (see "TO INSTALL A VERSION" below).
+# Pushing to `main` builds and uploads a new app version. It does NOT change
+# what the live subreddit is running: installing there is always a deliberate,
+# manual step (see "TO INSTALL A VERSION" below).
+#
+# Pushing to `dev` uploads AND installs that version on the dev subreddit
+# (DEV_SUBREDDIT, r/decyphergame_dev), so a push is a test build anyone can
+# open. That exception is safe only while the app never posts with
+# `runAs: "USER"`: see WHY NOTHING AUTO-INSTALLS. If that ever changes, take
+# the dev auto-install out again.
 #
 # WHY NOTHING AUTO-INSTALLS
 # ----------------------------------------------------------------------------
@@ -16,8 +22,9 @@ name: Deploy to Devvit
 # Losing approval loses that feature — with no error, just wrong attribution.
 #
 # On the dev subreddit an unapproved build is a known cost of testing, not a
-# mistake — but which build a subreddit runs should still be something a
-# person chose, not a side effect of a push.
+# mistake. This app posts only as the app account (never `runAs: "USER"`), so
+# there is nothing for an unapproved version to break there, and a push to
+# `dev` installs on the dev subreddit. Production stays a person's choice.
 #
 # TO INSTALL A VERSION (either subreddit)
 # ----------------------------------------------------------------------------
@@ -141,6 +148,10 @@ jobs:
           elif [ -n "$INSTALL_VERSION" ]; then
             echo "mode=install" >> "$GITHUB_OUTPUT"
             echo "Plan: install version $INSTALL_VERSION on r/$SUB (no new version will be built)."
+          elif [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref_name }}" = "dev" ]; then
+            echo "mode=upload" >> "$GITHUB_OUTPUT"
+            echo "autoinstall=true" >> "$GITHUB_OUTPUT"
+            echo "Plan: build and upload a new version, then install it on r/$SUB (a push to dev installs on the dev subreddit)."
           else
             echo "mode=upload" >> "$GITHUB_OUTPUT"
             echo "Plan: build and upload a new version. It will NOT be installed on r/$SUB, which stays on the version it is already running."
@@ -175,6 +186,29 @@ jobs:
           else
             echo "::warning::Uploaded, but the version number could not be read from the CLI output."
           fi
+
+      # A push to dev: install the version just uploaded on the dev subreddit.
+      # A fresh upload needs a moment before Reddit will install it ("That
+      # version of this app isn't ready to be installed yet"), so this retries
+      # for up to about three minutes. The app name is passed explicitly, as in
+      # the manual install below.
+      - name: Install the new version on the dev subreddit
+        if: ${{ steps.plan.outputs.autoinstall == 'true' && steps.upload.outputs.version != '' }}
+        env:
+          VERSION: ${{ steps.upload.outputs.version }}
+        run: |
+          SUB="r/${{ steps.plan.outputs.subreddit }}"
+          APP="$(node -p "require('./devvit.json').name")"
+          for TRY in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            echo "Installing $APP@$VERSION on $SUB (try $TRY)..."
+            if npx devvit install "$SUB" "$APP@$VERSION"; then
+              echo "::notice title=Installed::$VERSION on $SUB"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::Could not install $VERSION on $SUB. Install it by hand with this workflow's install_version input."
+          exit 1
 
       # Manual, deliberate install of a specific version onto the branch's
       # subreddit. Use this after a publish request has been approved.
@@ -221,6 +255,7 @@ jobs:
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
           for SUB in "$PROD" "$DEV"; do
+            [ -n "$SUB" ] || continue                       # (no live subreddit yet)
             echo "--- r/$SUB ---"
             OUT="$(npx devvit list installs "$SUB" 2>&1 || true)"
             echo "$OUT"
@@ -243,6 +278,8 @@ jobs:
               echo "Reported installed versions only. Nothing was built, uploaded or installed."
             elif [ "${{ steps.plan.outputs.mode }}" = "install" ]; then
               echo "Installed **@$INSTALL_VERSION** on **r/$SUB**."
+            elif [ "${{ steps.plan.outputs.autoinstall }}" = "true" ] && [ -n "${{ steps.upload.outputs.version }}" ]; then
+              echo "Uploaded **@${{ steps.upload.outputs.version }}** and installed it on **r/$SUB** (a push to dev). See the report above for what each subreddit runs."
             elif [ -n "${{ steps.upload.outputs.version }}" ]; then
               echo "Uploaded **@${{ steps.upload.outputs.version }}**. **It is not installed on r/$SUB**, which is still running whatever it ran before."
             else
