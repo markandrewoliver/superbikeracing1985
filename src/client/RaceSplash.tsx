@@ -1,25 +1,24 @@
-import { Copy } from "./components/Copy";
+import { useEffect } from "react";
 import { inDevvit, requestExpandedMode, webViewMode } from "./lib/devvit";
-import bg from "./game/assets/splash-art/bg.png";
-import rider from "./game/assets/splash-art/rider.png";
-import bike from "./game/assets/splash-art/bike.png";
-import sup from "./game/assets/splash-art/super.png";
-import n1985 from "./game/assets/splash-art/n1985.png";
-
-/** The title picture's layers, back to front — the same art the game's title
- *  screen builds itself up from. All five are the same size, so stacking them
- *  lines them up. */
-const LAYERS = [bg, rider, bike, sup, n1985];
 
 /**
- * Super Bike Racing 1985, inline: a splash and one button. Nothing here is
- * playable — the game is game.html, opened in the expanded view (full screen
- * on a phone, a large modal on desktop) by the button and only by the button.
+ * Super Bike Racing 1985, inline: the game's own intro video, playing by
+ * itself, sized to the post. Nothing here is playable. A click anywhere opens
+ * the game (game.html) in the expanded view, where it starts on the title
+ * menu: full screen on a phone, a large modal on desktop.
  *
- * No gesture is cancelled and nothing takes focus, so the feed scrolls past the
- * post untouched.
+ * The game runs here in its `splash` host (game/core/host.js): no controls, no
+ * input listeners, no cancelled gestures, so the feed scrolls past the post
+ * untouched. The video's own PRESS TO START is the label for the click.
  */
 export function RaceSplash() {
+  useEffect(() => {
+    // Read by the game as it loads. Importing it runs it, once: the module is
+    // cached, so a second effect (StrictMode) starts nothing new.
+    document.documentElement.dataset.host = "splash";
+    import("./game/main.js").catch((err) => console.error(`[splash] game failed to load: ${String(err)}`));
+  }, []);
+
   const open = (e: React.MouseEvent) => {
     // Outside Reddit (the local preview) there is no expanded view to ask for;
     // already expanded, there is nothing left to ask. Either way, go straight in.
@@ -29,16 +28,10 @@ export function RaceSplash() {
     }
     requestExpandedMode(e.nativeEvent, "game", { desktop: true });
   };
+
   return (
-    <div className="app race-splash">
-      <div className="race-splash__art" aria-hidden="true">
-        {LAYERS.map((src) => (
-          <img key={src} src={src} alt="" width={480} height={620} draggable={false} />
-        ))}
-      </div>
-      <button type="button" className="race-splash__open" onClick={open}>
-        <Copy k="raceOpen" />
-      </button>
+    <div className="app race-splash" onClick={open}>
+      <canvas id="game" width={240} height={150} role="img" aria-label="Super Bike Racing 1985" />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 // The game canvas, its drawing context (swapped to offscreen layers while compositing) and its height, which grows to fill a tall screen.
 
+import { HOST } from './host.js';
 import { view } from './state.js';
 import { clamp } from './util.js';
 
@@ -10,6 +11,7 @@ export function setCtx(c) { ctx = c; }
 const css = (n, fb) => { try { return (getComputedStyle(document.documentElement).getPropertyValue(n) || '').trim() || fb; } catch (e) { return fb; } };
 // Grow the canvas upward (more sky) until the screen fills the space the D-pad leaves.
 export function fitScreen() {
+  if (HOST !== 'handheld') return fitRoom();
   try {
     const ctr = document.querySelector('.pad'), keys = document.querySelector('.keys'), dev = document.querySelector('.device');
     if (!ctr || !dev || !cv.clientWidth) return;
@@ -18,4 +20,17 @@ export function fitScreen() {
     const ex = clamp(Math.floor((window.innerHeight - used) * 240 / cv.clientWidth) - 150, 0, 160);
     if (ex !== EXTRA) { EXTRA = ex; cv.height = 150 + ex; ctx.imageSmoothingEnabled = false; }
   } catch (e) {}
+}
+// The inline splash and desktop: no D-pad, so the screen takes the whole window (less the bezel's edge on desktop).
+// The sky grows to match the window's shape as far as it can (up to the same 160 rows), then the canvas is scaled
+// to fit, and centred by the stylesheet.
+const ROOM_EDGE = { splash: 0, desktop: 10 };                       // px of bezel and ring round the screen, each side
+function fitRoom() {
+  const edge = ROOM_EDGE[HOST] || 0, w = window.innerWidth - 2 * edge, h = window.innerHeight - 2 * edge;
+  if (w <= 0 || h <= 0) return;
+  const ex = clamp(Math.floor(h * 240 / w) - 150, 0, 160);
+  if (ex !== EXTRA) { EXTRA = ex; cv.height = 150 + ex; ctx.imageSmoothingEnabled = false; }
+  const cw = Math.floor(Math.min(w, h * 240 / cv.height));
+  cv.style.width = cw + 'px'; cv.style.height = Math.floor(cw * cv.height / 240) + 'px';
+  cv.dataset.sized = '';                                           // (the stylesheets keep it hidden until now: no jump)
 }

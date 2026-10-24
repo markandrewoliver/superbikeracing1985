@@ -15,10 +15,10 @@ any new screen, read
       `base-template` branch (`0e4d89f`).
 - [x] The game is split from one HTML file into modules (`src/client/game/`),
       and checked pixel for pixel against the original (doc 09).
-- [x] It is wired into Devvit. A `race` post shows a splash (the title picture
-      and a **Click here** button). The button opens the game in the expanded
-      view: full screen on a phone, a large modal on desktop. Nothing inline is
-      playable.
+- [x] It is wired into Devvit. A `race` post plays the game's intro video,
+      sized to the post. A click anywhere opens the game on its title menu in
+      the expanded view: full screen with the D-pad on a phone, a large modal
+      with the keyboard on desktop. Nothing inline is playable.
 - [x] The moderator menu offers the post kind **Super Bike Racing 1985**.
 - [x] `devvit.json`: app name `superbikeracing1985`, test subreddit
       `decyphergame_dev`. **Check the app name in step 2.**
@@ -85,16 +85,14 @@ Then, on reddit.com:
 
 ## 5. Try it, on a phone and on desktop
 
-- **Phone (Reddit app):** the post shows the title picture and **Click here**.
-  Tap it. The game should open full screen, with the D-pad under the screen.
+- **Phone (Reddit app):** the post plays the intro video. Tap it. The game
+  should open full screen on its title menu, with the D-pad under the screen.
   Scroll the feed past the post too: it must scroll freely.
-- **Desktop (reddit.com):** click **Click here**. The game should open in a
-  large window over the page, with the arrow keys working.
-
-**Tell me what desktop does.** Decypher once saw desktop answer this request
-with a "Preview on Devices" box instead of opening the post bigger. If that
-happens, or nothing happens, say so: the fallback is to run the game inside
-the post on desktop only (doc 09, "In Reddit").
+- **Desktop (reddit.com):** click the post. The game should open in a large
+  window over the page on its title menu, filling it inside the handheld's
+  bezel, with no D-pad. The arrow keys, Enter and Space play it. If the keys do
+  nothing at first, click the game once: the window may not have the keyboard
+  until it is clicked.
 
 ## 6. Connect GitHub Actions (for shipping versions)
 

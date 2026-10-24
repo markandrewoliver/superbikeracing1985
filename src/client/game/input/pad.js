@@ -2,6 +2,7 @@
 
 import { EXTRA, cv } from '../core/canvas.js';
 import { W } from '../core/config.js';
+import { HOST } from '../core/host.js';
 import { ATT, game } from '../core/state.js';
 import { mapTilt, tutAllow, tutLit } from '../modes/tutorial.js';
 import { inp } from '../race/session.js';
@@ -9,9 +10,8 @@ import { laneMove } from '../rider/physics.js';
 import { secretCode } from '../rider/secretMoves.js';
 import { anyPress } from '../ui/menu.js';
 
-const pad = document.getElementById('pad');
+const pad = document.getElementById('pad');                     // (on desktop it is there, but hidden; the splash has none)
 const padBtns = {};
-pad.querySelectorAll('[data-btn]').forEach(b => { padBtns[b.dataset.btn] = b; });
 const ptrs = new Map();
 const keys = { left: false, right: false, up: false, down: false };
 let padDown = new Set();
@@ -59,38 +59,44 @@ export function syncPad() {
   const lit = game.tut ? tutLit() : {}, al = game.tut ? tutAllow() : null;
   for (const k in padBtns) { padBtns[k].classList.toggle('is-down', now.has(k) || !!keys[k]); padBtns[k].classList.toggle('lit', !!lit[k]); padBtns[k].classList.toggle('off', !!al && !al[k]); }
 }
-pad.addEventListener('pointerdown', e => {
-  e.preventDefault();
-  try { pad.setPointerCapture(e.pointerId); } catch (_) {}
-  const bs = btnsAt(e), b0 = btnAt(e) || bs[0] || null;
-  ptrs.set(e.pointerId, (game.state === 'play' || game.state === 'replay') && bs.length ? bs : [b0]); anyPress(b0); syncPad();   // menus take one button; riding can take two
-});
-pad.addEventListener('pointermove', e => { if (ptrs.has(e.pointerId)) { const bs = btnsAt(e); ptrs.set(e.pointerId, game.state === 'play' && bs.length ? bs : [btnAt(e)]); syncPad(); } });
-const release = e => { ptrs.delete(e.pointerId); syncPad(); };
-pad.addEventListener('pointerup', release);
-pad.addEventListener('pointercancel', release);
-pad.addEventListener('lostpointercapture', release);
-pad.addEventListener('contextmenu', e => e.preventDefault());
-
 const KEYMAP = { ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right' };
-window.addEventListener('keydown', e => {
-  const k = KEYMAP[e.code];
-  if (!k && e.code !== 'Space' && e.code !== 'Enter') return;
-  e.preventDefault(); if (!e.repeat) anyPress(k || 'ok');
-  if (e.repeat) return;
-  if (k === 'up') laneMove(-1); else if (k === 'down') laneMove(1);
-  if (k === 'up') keys.up = true; else if (k === 'down') keys.down = true;
-  if (k === 'left') keys.left = true; else if (k === 'right') keys.right = true;
-  syncPad();
-});
-window.addEventListener('keyup', e => {
-  const k = KEYMAP[e.code];
-  if (k === 'left') keys.left = false; if (k === 'right') keys.right = false; if (k === 'up') keys.up = false; if (k === 'down') keys.down = false;
-  syncPad();
-});
-window.addEventListener('blur', () => { keys.left = keys.right = keys.up = keys.down = false; ptrs.clear(); syncPad(); });
-cv.addEventListener('pointerdown', e => {
-  e.preventDefault();
-  const r = cv.getBoundingClientRect();
-  anyPress('ok', { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * cv.height / r.height - EXTRA });
-});
+// The inline splash takes no input at all: a tap there belongs to the post (it opens the game), and nothing may
+// cancel a gesture while the feed scrolls past.
+if (HOST !== 'splash') listen();
+function listen() {
+  pad.querySelectorAll('[data-btn]').forEach(b => { padBtns[b.dataset.btn] = b; });
+  pad.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    try { pad.setPointerCapture(e.pointerId); } catch (_) {}
+    const bs = btnsAt(e), b0 = btnAt(e) || bs[0] || null;
+    ptrs.set(e.pointerId, (game.state === 'play' || game.state === 'replay') && bs.length ? bs : [b0]); anyPress(b0); syncPad();   // menus take one button; riding can take two
+  });
+  pad.addEventListener('pointermove', e => { if (ptrs.has(e.pointerId)) { const bs = btnsAt(e); ptrs.set(e.pointerId, game.state === 'play' && bs.length ? bs : [btnAt(e)]); syncPad(); } });
+  const release = e => { ptrs.delete(e.pointerId); syncPad(); };
+  pad.addEventListener('pointerup', release);
+  pad.addEventListener('pointercancel', release);
+  pad.addEventListener('lostpointercapture', release);
+  pad.addEventListener('contextmenu', e => e.preventDefault());
+
+  window.addEventListener('keydown', e => {
+    const k = KEYMAP[e.code];
+    if (!k && e.code !== 'Space' && e.code !== 'Enter') return;
+    e.preventDefault(); if (!e.repeat) anyPress(k || 'ok');
+    if (e.repeat) return;
+    if (k === 'up') laneMove(-1); else if (k === 'down') laneMove(1);
+    if (k === 'up') keys.up = true; else if (k === 'down') keys.down = true;
+    if (k === 'left') keys.left = true; else if (k === 'right') keys.right = true;
+    syncPad();
+  });
+  window.addEventListener('keyup', e => {
+    const k = KEYMAP[e.code];
+    if (k === 'left') keys.left = false; if (k === 'right') keys.right = false; if (k === 'up') keys.up = false; if (k === 'down') keys.down = false;
+    syncPad();
+  });
+  window.addEventListener('blur', () => { keys.left = keys.right = keys.up = keys.down = false; ptrs.clear(); syncPad(); });
+  cv.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    const r = cv.getBoundingClientRect();
+    anyPress('ok', { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * cv.height / r.height - EXTRA });
+  });
+}

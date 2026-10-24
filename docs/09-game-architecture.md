@@ -117,17 +117,33 @@ game page fits at 320×568, 375×667, 390×844, 844×390, 700×512, 900×600,
 
 ## In Reddit
 
-- `devvit.json` → `post.entrypoints`: `default` is `index.html` (the React app;
-  for a `race` post, `RaceSplash.tsx`: the title picture and one button), and
-  `game` is `game.html`.
-- The button calls `requestExpandedMode(event, "game", { desktop: true })`.
-  That is full screen on a phone and a large modal on desktop. Nothing else on
-  the splash expands the post, and nothing inline is playable.
-- **The desktop half is the part to check on a real post.** Decypher once saw
-  desktop answer an expanded-mode request with a "Preview on Devices" modal,
-  which is why the template refused on desktop. If that happens here, the
-  fallback is to open the game inline on desktop only (a `tall` post is 512px:
-  enough for the handheld at about 430px wide).
+- `devvit.json` → `post.entrypoints`: `default` is `index.html` (the React
+  app), and `game` is `game.html`.
+- **The game runs in three hosts**, named once at load by `core/host.js` and
+  mirrored on `<html data-host>` for `game.css`:
+  - `splash`: the inline post. `RaceSplash.tsx` puts a bare canvas in the post,
+    sets `data-host="splash"` and imports `game/main.js`, which plays the intro
+    video only. There are no controls and no input listeners
+    (`input/pad.js` → `listen()` is skipped), so nothing cancels a gesture.
+    `fitRoom()` in `core/canvas.js` sizes the canvas to the post, adding sky
+    rows to match a tall post, and keeps it hidden until sized (no layout
+    shift). A click anywhere on the post calls
+    `requestExpandedMode(event, "game", { desktop: true })`, and the video's own
+    PRESS TO START labels it.
+  - `desktop`: `game.html` on a computer. No D-pad; the keyboard drives it, and
+    a click on the screen is a press. The bezel fills the window and the
+    screen sits in it as large as it fits, with the bezel's edge showing.
+  - `handheld`: `game.html` on a phone. The original handheld with its D-pad.
+- **`game.html` opens on the title menu**, as a press during the intro video
+  would. The video belongs to the inline post; LEFT on the menu still brings
+  it back.
+- Desktop expands into Reddit's large modal (checked on a real post, Oct 24).
+  Decypher once saw a "Preview on Devices" box instead, which is why the
+  template refuses desktop unless the caller passes `desktop: true`.
+- **On a wide post the title scene is cropped.** It is drawn for a tall
+  screen, and a wide post gets a short canvas (240x150 at 880x512), so the
+  bottom of the title picture falls off. Later scenes of the video are drawn
+  for any height.
 
 ## Not done yet
 

@@ -37,3 +37,13 @@ canvas{display:block;width:100%;height:auto;image-rendering:pixelated;touch-acti
    fitScreen() then grows the canvas upward into whatever is left. Nothing on this page scrolls. */
 .device{max-width:min(640px,calc((100dvh - 60px - var(--dp)) * 1.6 + 36px))}
 html,body{overflow:hidden}
+
+/* Desktop (data-host="desktop", set by core/host.js): the keyboard drives it, so no D-pad. The bezel fills the
+   window, and the screen sits in it as large as it fits; core/canvas.js → fitRoom() sizes the canvas and leaves
+   the bezel's 10px edge showing. Until the host is known, the controls stay hidden rather than flash. */
+html:not([data-host]) .controls{visibility:hidden}
+html[data-host="desktop"] .controls{display:none}
+html[data-host="desktop"] .device{max-width:none;height:100%;padding:0}
+html[data-host="desktop"] .bezel{flex:1;display:flex;align-items:center;justify-content:center;padding:8px;border-radius:0}
+html[data-host="desktop"] .screen{flex:0 0 auto}
+html[data-host="desktop"] canvas:not([data-sized]){visibility:hidden}

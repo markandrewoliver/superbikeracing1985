@@ -56,7 +56,8 @@ import { attStart, frameRender, frameTick } from './attract/attract.js';
 import { engineUpdate } from './audio/sound.js';
 import { fitScreen } from './core/canvas.js';
 import { STEP } from './core/config.js';
-import { game } from './core/state.js';
+import { HOST } from './core/host.js';
+import { game, menu } from './core/state.js';
 
 window.addEventListener('resize', fitScreen);
 fitScreen(); setTimeout(fitScreen, 300);
@@ -70,4 +71,9 @@ function frame(ts) {
   frameRender();
   requestAnimationFrame(frame);
 }
-assetsReady().then(() => { attStart(); requestAnimationFrame(frame); });   // (the art is files now: start once it has all arrived)
+// The inline splash plays the intro video; the game page (opened from it) starts on the title menu, as a press
+// during the video would. Either way, once all the art has arrived.
+assetsReady().then(() => {
+  if (HOST === 'splash') attStart(); else { menu.titleMenu = true; menu.titleSeen = true; }
+  requestAnimationFrame(frame);
+});

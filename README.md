@@ -39,7 +39,7 @@ src/client/
   game.html                    THE GAME: the expanded post (entrypoint "game")
   game/                        the game's modules: core, world, race, rider, modes,
                                input, gfx, ui, art, attract, assets (PNGs); see doc 09
-  RaceSplash.tsx               the inline post for a "race" post: title art + one button
+  RaceSplash.tsx               the inline post for a "race" post: the intro video; a click opens the game
   index.html                   inline ground + spinner, external preflight script
   public/boot-preflight.js     first request, before the bundle (CSP-safe)
   App.tsx                      --vis-h, the CRT, expand-on-tap, routing by kind
