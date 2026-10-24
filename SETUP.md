@@ -57,17 +57,21 @@ A small private subreddit is ideal.
 
 ```bash
 npm run build      # makes dist/; every devvit command checks devvit.json against it
-npx devvit init    # once: registers the app with Reddit, in the browser
+npx devvit init --force   # once: registers the app with Reddit, in the browser
 npm run dev        # = devvit playtest: uploads and installs on r/decyphergame_dev
 ```
 
 - **Build first.** On a fresh copy, `devvit` refuses with "Your devvit.json
   references files that don't exist" until `dist/` is there.
-- **`devvit init`** opens Reddit's app-creation page. Give it the name from
-  step 2 exactly, and let it initialize this folder (no template, no new
-  folder). Then run `git diff devvit.json package.json` and look at what it
-  changed before committing anything.
-- Without `init`, playtest stops with "Your app doesn't exist yet".
+- **`devvit init --force`** opens Reddit's app-creation page. Give it the name
+  from step 2 exactly. Inside this folder it copies no template; it writes the
+  name back into `devvit.json` and `package.json`, pins the Devvit packages to
+  the CLI's version and runs `npm install`. Run `git diff` afterwards and look
+  before committing anything.
+- **Why `--force`:** plain `init` decides "already initialized" from the name
+  in `devvit.json` alone, and the name is already filled in, so it does
+  nothing. Playtest asks Reddit instead, which knows no such app yet, and stops
+  with "Your app doesn't exist yet".
 
 Leave `npm run dev` running while you test: it streams the app's logs. (If a
 code change does not show up in the post, run `npm run build` and reload.)
