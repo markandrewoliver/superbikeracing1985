@@ -140,10 +140,24 @@ game page fits at 320×568, 375×667, 390×844, 844×390, 700×512, 900×600,
 - Desktop expands into Reddit's large modal (checked on a real post, Oct 24).
   Decypher once saw a "Preview on Devices" box instead, which is why the
   template refuses desktop unless the caller passes `desktop: true`.
-- **On a wide post the title scene is cropped.** It is drawn for a tall
-  screen, and a wide post gets a short canvas (240x150 at 880x512), so the
-  bottom of the title picture falls off. Later scenes of the video are drawn
-  for any height.
+- **On a wide post the intro composes its title scenes** (`attract/wide.js`).
+  The title picture is drawn for a tall screen, and a wide post gets a short
+  canvas, which cropped it. So on a post wider than 240:310 the title, the pan
+  and the start run on the tall canvas, drawn onto a canvas of the post's
+  shape:
+  - The title shows the whole picture with the game's own city layer carried
+    out to both edges, copy by copy and every other one mirrored. The city
+    draws in row by row with the picture, and the rider flies over the
+    extended sky.
+  - As the rider shoots off, the view pushes in, anchored at the bottom, to
+    full width. The pan starts from exactly that frame.
+  - The words glide from the picture to the top, where every other scene has
+    them.
+  - Coming round again, the title opens at full width and pulls back while
+    the picture draws in.
+  - The canvas changes shape only under the wipe, when it covers the screen in
+    the night colour. Frame-to-frame change at every transition was measured
+    no larger than the motion inside a scene.
 
 ## Not done yet
 

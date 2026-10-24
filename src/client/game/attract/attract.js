@@ -2,6 +2,7 @@
 
 import { KTHEMES } from '../art/riders.js';
 import { ATT_SCENES, attLayers } from './scenes.js';
+import { wideScene, wideWords } from './wide.js';
 import { ctx, cv } from '../core/canvas.js';
 import { G, SC, STEP, W } from '../core/config.js';
 import { P } from '../core/palette.js';
@@ -146,6 +147,7 @@ export function attGo(i) {
   const S = ATT_SCENES[i];
   ATT.scene = i; ATT.t = 0; attRand = seededRand(1000 + i * 77);
   if (!S.keep) fx.popups.length = 0;
+  wideScene(S);                                                    // (a wide splash picks the canvas's shape before the scene frames itself)
   S.setup();
 }
 export function frameTick(dt) {                                         // one fixed step: the game, or the intro video driving it
@@ -175,10 +177,13 @@ export function frameRender() {                                         // one f
       ctx.lineWidth = 2; ctx.strokeStyle = P.turbo; ctx.beginPath(); ctx.moveTo(e + sl, 0); ctx.lineTo(e - sl, Hc); ctx.stroke(); }
   }
   if ((game.state !== 'title' || ATT.keepWords) && splashOk()) {          // the title and PRESS TO START stay up over the whole video
-    const Hc = cv.height, y0 = Hc >= 310 ? Hc - 310 : -26;
-    ctx.imageSmoothingEnabled = true;
-    for (const k of ['bike', 'super', 'n1985']) ctx.drawImage(splashImg[k], -8, y0, 240, 310);
-    ctx.imageSmoothingEnabled = false;
+    if (!wideWords()) {                                            // (a wide splash draws the words itself while it pushes in)
+      const Hc = cv.height, y0 = Hc >= 310 ? Hc - 310 : -26;
+      ctx.imageSmoothingEnabled = true;
+      for (const k of ['bike', 'super', 'n1985']) ctx.drawImage(splashImg[k], -8, y0, 240, 310);
+      ctx.imageSmoothingEnabled = false;
+    }
+    const Hc = cv.height;
     if (game.state !== 'title' && Math.sin(game.tNow * 5) > -0.3) {   // (the title screen draws its own)
       const s = 'PRESS TO START', sz = 2, w = s.length * 6 * sz - sz, x = Math.round((W - w) / 2), y = Hc - 30;
       for (let dx = -2; dx <= 2; dx += 2) for (let dy = -2; dy <= 2; dy += 2) if (dx || dy) drawStr(s, x + dx, y + dy, P.black, sz);

@@ -56,6 +56,7 @@ import { attStart, frameRender, frameTick } from './attract/attract.js';
 import { engineUpdate } from './audio/sound.js';
 import { fitScreen } from './core/canvas.js';
 import { STEP } from './core/config.js';
+import { presentSplash } from './attract/wide.js';
 import { HOST } from './core/host.js';
 import { game, menu } from './core/state.js';
 
@@ -69,6 +70,7 @@ function frame(ts) {
   while (accT >= STEP) { accT -= STEP; frameTick(STEP); }
   engineUpdate();
   frameRender();
+  if (HOST === 'splash') presentSplash();                          // (a wide post composes the title's scenes: attract/wide.js)
   requestAnimationFrame(frame);
 }
 // The inline splash plays the intro video; the game page (opened from it) starts on the title menu, as a press

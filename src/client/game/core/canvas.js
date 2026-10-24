@@ -25,10 +25,15 @@ export function fitScreen() {
 // The sky grows to match the window's shape as far as it can (up to the same 160 rows), then the canvas is scaled
 // to fit, and centred by the stylesheet.
 const ROOM_EDGE = { splash: 0, desktop: 10 };                       // px of bezel and ring round the screen, each side
+let tallRoom = false;
+// The wide splash's title scenes draw on the tall canvas whatever the post's shape (attract/wide.js composes it).
+export function setTallRoom(on) { if (on !== tallRoom) { tallRoom = on; fitScreen(); } }
+// Sky rows that would match a room of w x h: 160 (all of them) for anything as tall as the title picture or taller.
+export const roomExtra = (w, h) => clamp(Math.floor(h * 240 / w) - 150, 0, 160);
 function fitRoom() {
   const edge = ROOM_EDGE[HOST] || 0, w = window.innerWidth - 2 * edge, h = window.innerHeight - 2 * edge;
   if (w <= 0 || h <= 0) return;
-  const ex = clamp(Math.floor(h * 240 / w) - 150, 0, 160);
+  const ex = tallRoom ? 160 : roomExtra(w, h);
   if (ex !== EXTRA) { EXTRA = ex; cv.height = 150 + ex; ctx.imageSmoothingEnabled = false; }
   const cw = Math.floor(Math.min(w, h * 240 / cv.height));
   cv.style.width = cw + 'px'; cv.style.height = Math.floor(cw * cv.height / 240) + 'px';
