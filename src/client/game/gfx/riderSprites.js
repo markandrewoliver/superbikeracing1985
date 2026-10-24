@@ -219,7 +219,7 @@ function dressed(rows, head, name, body) {
 export function footBase(name, theme) {                                       // stand, walk0/1, sit, lift, jump, rag (tumbling), down (lying)
   theme = theme || 0;
   const key = name + theme; let c = footBases.get(key); if (c) return c;
-  const head = KTHEMES[theme].head || 'helmet', set = K_PEOPLE[head], has = !!(set && set[name]);   // (a drafted head without this pose wears the helmet's)
+  const head = KTHEMES[theme].head || 'helmet', set = K_PEOPLE[head], has = !!(set && set[name]);   // (a head without this pose wears the helmet's)
   const gr = dressed(has ? set[name] : K_PEOPLE.helmet[name], has ? head : 'helmet', name, KTHEMES[theme].body), w = gr[0].length, h = gr.length;
   c = document.createElement('canvas'); c.width = w * KS; c.height = h * KS; c.ax = Math.round(w * KS / 2); c.ay = name === 'rag' ? h : h * KS;   // the tumbling body spins about its middle
   const g = c.getContext('2d');
