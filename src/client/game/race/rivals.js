@@ -26,7 +26,8 @@ export function resetBots(lanes) {
   RIVALS.forEach((r, i) => bots.push({
     name: r.name, theme: r.theme, skill: r.skill, x: race.startX, v: 0, lane: lanes[i], laneF: lanes[i], laneT: lanes[i],
     h: 0, hv: 0, vy: 0, grounded: true, angle: 0, rel: 0, wB: 0, wheelieT: 0, tStack: [], turbo: 0, mud: false,
-    hits: new Set(), wobbleT: 0, hitCD: 0, think: rnd(0.3, 0.6), spin: 0, landT: 0, crash: null, done: 0, loop: null, loopDX: 0
+    hits: new Set(), wobbleT: 0, hitCD: 0, think: rnd(0.3, 0.6), spin: 0, landT: 0, crash: null, done: 0, loop: null, loopDX: 0,
+    wipeouts: 0                                                    // (this race's: the podium shows them as casts)
   }));
 }
 function riderAheadIn(o, l, range) {
@@ -69,6 +70,7 @@ function botChooseLane(o) {
 }
 export function botCrash(o, splash) {
   if (ATT.on && ATT.noBotCrash) return;
+  o.wipeouts = (o.wipeouts || 0) + 1;
   o.crash = { t: 0, splash: splash ? riverAt(o.x, o.lane) : null, bodies: [
     { x: o.x, h: o.h, vx: o.v * 0.45, vy: Math.max(o.vy, 60), rot: o.angle, rv: 7 },
     { x: o.x, h: o.h + 14, vx: o.v * 0.62, vy: Math.max(o.vy, 0) + 110, rot: o.angle, rv: 10 }

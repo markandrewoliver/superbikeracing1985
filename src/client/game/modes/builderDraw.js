@@ -12,7 +12,7 @@ import { BROWS, CELL_M, MIN_LEN, PIECES, TB_COLS, TB_Y, TOOLS, TOOL_W, cellM, ed
 import { fmtTime } from '../race/play.js';
 import { LOOK_HEADS, LOOK_ROWS, look, lookLabel } from '../race/playerLook.js';
 import { dim } from '../ui/overlay.js';
-import { POD_PAL, podFigure } from '../ui/podium.js';
+import { drawPodFigure } from '../ui/podium.js';
 import { RSROWS } from '../ui/title.js';
 import { BGS, FEAT_NAME, LEN_NAME, SURF } from '../world/settings.js';
 import { laneBase } from '../world/terrain.js';
@@ -118,7 +118,7 @@ export function drawBuilderOverlay() {
     rect(16, 19, W - 32, 40, '#14208a'); rect(16, 56, W - 32, 3, '#5a78f0');          // a little stage: on the bike, and standing
     const bb = bikeBase(0, 0, 0, Math.floor(game.tNow * 6) & 1, true, 0, 0);
     ctx.drawImage(bb, W / 2 - 26 - bb.ax, 56 - bb.ay);
-    for (const [key, c] of podFigure('stand', 0, LOOK_HEADS[look.head])) { const [x, y] = key.split(',').map(Number); rect(W / 2 + 35 + x * 2, 36 + y * 2, 2, 2, POD_PAL[c] || kCol(c, 0)); }   // standing, facing us (as on the podium)
+    drawPodFigure('stand', 0, LOOK_HEADS[look.head], 0, 0, W / 2 + 35, 36);   // standing, facing us (as on the podium)
     rect(16, 61, W - 32, 88, '#14208a'); rect(16, 61, W - 32, 1, P.white); rect(16, 148, W - 32, 1, P.white);
     const px1 = (x0, y0) => (x, y, c) => { ctx.fillStyle = c; ctx.fillRect(x0 + x, y0 + y, 1, 1); };   // thumbnails: one pixel per Kenney pixel
     [...LOOK_ROWS, ['BACK TO MENU']].forEach((r, i) => {
