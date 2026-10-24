@@ -140,6 +140,11 @@ game page fits at 320×568, 375×667, 390×844, 844×390, 700×512, 900×600,
   phone browser's address bar comes and goes. `game.css` sizes the handheld
   from it (`--room-h`), and `fitScreen()` reads it (`visibleHeight()`),
   refitting on each change (`VIS_H_EVENT`), which can come with no `resize`.
+- **On a phone the screen keeps its size.** `fitScreen()` lays the screen
+  out once, for the tallest the page has been at this width (its width and
+  its sky rows). When the page gets shorter, the D-pad gives up the height,
+  down to `DP_MIN`; only then does the screen shrink, scaled whole. It sets
+  `--dp` and `--dev-w` for `game.css`.
 - **`game.html` opens on the title menu**, as a press during the intro video
   would. The video belongs to the inline post; LEFT on the menu still brings
   it back.

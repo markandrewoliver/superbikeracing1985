@@ -35,8 +35,9 @@ canvas{display:block;width:100%;height:auto;image-rendering:auto;touch-action:no
 /* Inside Reddit. The page is always the expanded post (full screen on a phone, a large modal on desktop), whose
    height can be well short of a phone's. The bezel's width sets the screen's height, so cap the width at what leaves
    room for the D-pad: 56px of padding, gap and bezel, plus the pad, with the canvas at its shortest (240x150).
+   (That is the layout before script runs; on a phone fitScreen() then takes over, with --dev-w and --dp.)
    fitScreen() then grows the canvas upward into whatever is left. Nothing on this page scrolls. */
-.device{max-width:min(640px,calc((var(--room-h) - 60px - var(--dp)) * 1.6 + 36px))}
+.device{max-width:var(--dev-w,min(640px,calc((var(--room-h) - 60px - var(--dp)) * 1.6 + 36px)))}   /* (on a phone fitScreen() sets --dev-w and --dp: the screen keeps its size, the D-pad gives way first) */
 html,body{overflow:hidden}
 
 /* Desktop (data-host="desktop", set by core/host.js): the keyboard drives it, so no D-pad. The bezel fills the
