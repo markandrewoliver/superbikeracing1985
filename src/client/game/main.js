@@ -59,7 +59,9 @@ import { STEP } from './core/config.js';
 import { presentSplash } from './attract/wide.js';
 import { HOST } from './core/host.js';
 import { game, menu } from './core/state.js';
+import { mountCrt } from './ui/crt.js';
 
+if (HOST !== 'splash') mountCrt(document.querySelector('.screen'));   // (the splash is under the app's glass)
 window.addEventListener('resize', fitScreen);
 fitScreen(); setTimeout(fitScreen, 300);
 

@@ -144,3 +144,10 @@ started it (a wind-down after a turn ends), drive it from its own rAF loop.
    mid-range Android phone running Firefox and on an old iPad with **a feed of
    several posts** (`embed.html?n=6`) before shipping. A desktop preview
    proves nothing.
+
+## On the game page
+
+`game.html` is not React, so it cannot mount `CrtScreen`. `game/ui/crt.js`
+builds the same four spans as `.crt.crt--screen` inside the game's `.screen`,
+where they fill that box instead of the viewport. Both start the roll with
+`startCrtRoll()` from `lib/crtGlass.ts`.

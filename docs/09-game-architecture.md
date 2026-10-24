@@ -182,6 +182,13 @@ it, from the owner's Workshop, and change what is drawn on purpose:
   turns each into a `K_BIKES` entry, so the rest of the game treats a ride as
   a bike. A ride's frame is a number that keeps counting
   (`bikeFrame()` folds it), not the old two-frame tread swap.
+- **The CRT glass** (`styles/20-crt.css`, doc 03) is on both. The splash is
+  under the app's own glass, over the whole post (`App.tsx`). `game.html`
+  lays the same four layers over the handheld's screen only
+  (`ui/crt.js`), so the bezel is not under it; the roll timing is shared
+  (`lib/crtGlass.ts`). The type glow and bleed are a `text-shadow`, so they
+  reach no canvas-drawn text: the game's words get the scanlines, vignette,
+  bloom and roll, not the glow.
 
 ## Not done yet
 

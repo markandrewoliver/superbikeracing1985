@@ -14,27 +14,25 @@ import { trackVisibleHeight } from "./lib/visibleHeight";
  *
  * Then it routes on `postData.kind`.
  *
- * **Super Bike Racing 1985 (`race`) is the exception to the last two.** Its
+ * **Super Bike Racing 1985 (`race`) is the exception to the last one.** Its
  * inline post is only a splash; the game is a page of its own (game.html), and
- * the splash's button is the one way into it, on desktop as well as phones. So
- * a tap anywhere else must not expand the post, and the game draws its own
- * screen, with no glass over the splash.
+ * a click on the splash is the one way into it, on desktop as well as phones,
+ * so the splash asks for the expanded view itself. The glass covers the splash
+ * as it covers any post; game.html lays its own over the game's screen.
  */
 export function App() {
   useEffect(() => trackVisibleHeight(), []);
 
   const kind = postKind();
-  const race = kind === "race";
-
   // Post kinds that should stay inline (read-only reports, or anything typed
   // on the OS keyboard) leave this out. See docs/02-devices-and-input.md.
-  const inlineOnly = race;
+  const inlineOnly = kind === "race";
   useEffect(() => (inlineOnly ? undefined : expandOnTap()), [inlineOnly]);
 
   return (
     <>
       <div className="crt-screen">{route(kind)}</div>
-      {race ? null : <CrtScreen />}
+      <CrtScreen />
     </>
   );
 }

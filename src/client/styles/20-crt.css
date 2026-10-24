@@ -84,6 +84,15 @@
   display: contents;
 }
 
+/* The glass over one screen instead of the viewport: the game page's handheld
+   (game/ui/crt.js). The parent must be positioned and clip (game.css .screen). */
+.crt.crt--screen {
+  display: block;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
 /* Qualified with the element on purpose: a later bare `.crt__x { display:none }`
    is (0,1,0) and loses to this (0,1,1). To turn a layer off, write
    `.crt > span.crt__x { display: none }` and check getComputedStyle — a layer
@@ -98,6 +107,13 @@
      (this template uses <= 60), and never lift a screen above the glass to
      escape it — mask the glass instead. */
   z-index: 9000;
+}
+
+/* The glass over one screen fills that screen, not the viewport. */
+.crt.crt--screen > span {
+  position: absolute;
+  height: auto;
+  z-index: auto;
 }
 
 .crt__bloom {
