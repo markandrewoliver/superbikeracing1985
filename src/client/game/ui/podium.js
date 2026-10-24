@@ -1,6 +1,6 @@
 // The podium after the finish.
 
-import { FRONT_HEADS } from '../art/podium.js';
+import { FRONT_HEADS, FRONT_OVER } from '../art/podium.js';
 import { KTHEMES } from '../art/riders.js';
 import { EXTRA, ctx } from '../core/canvas.js';
 import { H, W } from '../core/config.js';
@@ -115,6 +115,7 @@ export function podFigure(anim, t, head, lvl = 0) {
     if (S.trophy) { const hx = free.length === 1 ? (free[0][1] < 0 ? ox + 1 : ox + 7) : ox + 4; props.push(['trophy', hx - 3, handsTop - TROPHY.length + 1]); }   // its base sits in his hands
     if (S.bottle) props.push(['bottle', ox + 7, oy + 2 - S.bottle.sh, S.bottle]);
   }
+  (FRONT_OVER[head] || []).forEach((r, y) => { for (let x = 0; x < r.length; x++) if (r[x] !== '.') put(ox + x, oy + y, r[x]); });   // a beard, over the chest and arms
   for (const p of props) {
     if (p[0] === 'trophy') TROPHY.forEach((r, y) => { for (let x = 0; x < r.length; x++) if (r[x] !== '.') put(p[1] + x, p[2] + y, r[x]); });
     else { const [, bx, by, B] = p, k = B.k;

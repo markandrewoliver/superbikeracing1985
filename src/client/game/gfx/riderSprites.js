@@ -165,7 +165,7 @@ export const footBases = new Map();
 export function footBase(name, theme) {                                       // stand, walk0/1, sit, lift, jump, rag (tumbling), down (lying)
   theme = theme || 0;
   const key = name + theme; let c = footBases.get(key); if (c) return c;
-  const gr = K_PEOPLE[KTHEMES[theme].head || 'helmet'][name], w = gr[0].length, h = gr.length;
+  const set = K_PEOPLE[KTHEMES[theme].head || 'helmet'], gr = (set && set[name]) || K_PEOPLE.helmet[name], w = gr[0].length, h = gr.length;   // (a drafted head without this pose wears the helmet's)
   c = document.createElement('canvas'); c.width = w * KS; c.height = h * KS; c.ax = Math.round(w * KS / 2); c.ay = name === 'rag' ? h : h * KS;   // the tumbling body spins about its middle
   const g = c.getContext('2d');
   gr.forEach((row, y) => { for (let x = 0; x < w; x++) if (row[x] !== '.') { g.fillStyle = kCol(row[x], theme); g.fillRect(x * KS, y * KS, KS, KS); } });

@@ -23,3 +23,31 @@ export const KTHEMES = [null,
   { s: '#6844fc', S: '#4428bc', p: '#4428bc', P: '#4428bc', b: '#3cbcfc', B: '#0078f8', r: '#00a8a8', head: 'helmet', bike: 0 },
   { s: '#00a800', S: '#006800', p: '#006800', P: '#006800', b: '#f8b800', B: '#ac7c00', r: '#f8b800', head: 'helmet', bike: 0 },
   { s: '#e45c10', S: '#a81000', p: '#a81000', P: '#a81000', b: '#a0c8fc', B: '#648cdc', r: '#64a0fc', head: 'helmet', bike: 0 }];
+
+// THREE MORE HEADS (Super Bike Workshop, section 7): Mustache (short hair, horseshoe mustache), America (a full helmet,
+// blue top with white stars over red and white stripes) and the tutorial professor's own head (tufts, glasses, a full
+// beard hanging over the chest). Their front views are in art/podium.js. u and X are the flag's blue and red.
+Object.assign(K_PAL, { u: '#2850b8', X: '#d8202a' });
+Object.assign(K_HEADS, {
+  stache3: { art: ['...hhh.', '.hhhhh.', 'hhssss.', 'hsssss.', '.hhhhh.', '.hsssh.', '..sss..'], ax: -2, ay: -6 },
+  prof2: { art: ['...SSS..', '.GGSsss.', '.GSssea.', '.GSsssss', '..GWWWW.', '..GWWGW.', '...WWWW.', '...WWW..', '....W...'], ax: -4, ay: -5 },
+  flag_us: { art: ['..uuuu..', '.ufuufuu', '.XXXVVVv', '.fffVVV.', '..XXXX..'], ax: -3, ay: -5 }
+});
+// Their off-bike sprites, DRAFTED from the helmet's: the helmet's body, head swapped (art row r sits r + ay rows from
+// the shoulder line, as on the bike; rows at or below the shoulder lie over the body). No lying-down pose yet: those
+// fall back to the helmet's (gfx/riderSprites.js, footBase).
+const SIDE_TO_PEOPLE = { R: 'r', W: 'f', G: 'h', V: 'e', v: 'g', h: 'f', s: 'i', S: 'j' };
+function draftPeople(key) {
+  const H = K_HEADS[key], art = H.art.map(r => r.split('').map(c => c === '.' ? '.' : (SIDE_TO_PEOPLE[c] || c))), HA = K_HEADS.helmet.art, up = -H.ay, out = {};
+  for (const [name, rows] of Object.entries(K_PEOPLE.helmet)) {
+    if (name === 'down') continue;
+    const off = rows[0].indexOf('r') - HA[0].indexOf('R') + (H.ax - K_HEADS.helmet.ax), body = rows.slice(5), pad = Math.max(0, -off);
+    const w = Math.max(...body.map(r => r.length), off + art[0].length) + pad, g = [];
+    for (let y = 0; y < up + body.length; y++) g.push(Array(w).fill('.'));
+    body.forEach((r, y) => { for (let x = 0; x < r.length; x++) if (r[x] !== '.') g[up + y][pad + x] = r[x]; });
+    art.forEach((r, y) => r.forEach((c, x) => { if (c !== '.' && g[y]) g[y][pad + off + x] = c; }));
+    out[name] = g.map(r => r.join(''));
+  }
+  return out;
+}
+for (const k of ['stache3', 'flag_us', 'prof2']) K_PEOPLE[k] = draftPeople(k);
