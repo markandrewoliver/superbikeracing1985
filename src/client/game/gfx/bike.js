@@ -7,7 +7,7 @@ import { game, view } from '../core/state.js';
 import { clamp, hash, lerp, rnd, wrapPi } from '../core/util.js';
 import { drawSplash } from './lighting.js';
 import { STEPS, rect, rotFrame, wsx } from './pixel.js';
-import { bikeBase, drawFrame, fireFrom, flipBase, footBase, kExhaust, kLamp, kRear, ragdollBase } from './riderSprites.js';
+import { bikeBase, bikeFrame, drawFrame, fireFrom, flipBase, footBase, kExhaust, kLamp, kRear, ragdollBase } from './riderSprites.js';
 import { drawProf } from '../modes/tutorial.js';
 import { CR, crashPhases } from '../race/crash.js';
 import { INTRO_T } from '../race/loop.js';
@@ -36,11 +36,13 @@ const stepK = (ang) => ((Math.round(ang / (2 * Math.PI / STEPS)) % STEPS) + STEP
 export function drawBikeSprite(by, angle, pivotT, body, mode, bob, wf, sx, theme, dz, noRider) {
   if (sx === undefined) sx = BIKE_SX; theme = theme || 0; dz = dz || 0;
   const k = stepK(angle), a = k * 2 * Math.PI / STEPS, px = kRear(theme) * pivotT;     // pivot swings the bike about the rear wheel
+  wf = bikeFrame(wf, theme);
   const base = bikeBase(body, mode, bob, wf, !noRider, theme, dz);
   const ox = sx + (px - px * Math.cos(a)), oy = by + px * Math.sin(a);
   drawFrame(rotFrame('b' + body + '_' + mode + '_' + bob + '_' + wf + '_' + theme + '_' + dz + (noRider ? '_n' : ''), base, k), ox, oy);
   const ca = Math.cos(a), sa = Math.sin(a);
-  const [lx, lh] = kLamp(theme); view.lamps.push([Math.round(ox) + lx * ca + lh * sa, Math.round(oy) - lx * sa + lh * ca, a]);   // headlight
+  const lamp = kLamp(theme);
+  if (lamp) { const [lx, lh] = lamp; view.lamps.push([Math.round(ox) + lx * ca + lh * sa, Math.round(oy) - lx * sa + lh * ca, a]); }   // headlight (a horse has none)
 }
 
 // the rider on foot; sx/sy = feet, face < 0 mirrors him to face left
@@ -160,7 +162,7 @@ function drawBikeEntity() {
   if (game.state === 'intro') {                                                    // riding up to the line
     const sx = Math.round(wsx(b.x, view.camX)), gy = ly - Math.round(terrain(b.lane, b.x) * SC), u = game.stateT / INTRO_T;
     rect(sx - 10, gy, 20, 2, P.dirtDD);
-    drawBikeSprite(gy, slopeAt(b.lane, b.x), 0, u > 0.7 ? -1 : 0, 0, b.v > 60 ? Math.floor(b.spin / 4.4) & 1 : 0, Math.floor(b.spin / 2.2) & 1, sx);   // sits back as he brakes
+    drawBikeSprite(gy, slopeAt(b.lane, b.x), 0, u > 0.7 ? -1 : 0, 0, b.v > 60 ? Math.floor(b.spin / 4.4) & 1 : 0, Math.floor(b.spin / 2.2), sx);   // sits back as he brakes
     return;
   }
   if (b.crash) {
@@ -168,7 +170,7 @@ function drawBikeEntity() {
     if (c.splash) { drawSplash(BIKE_SX + (b.x - view.camX) * SC, ly, c.t); return; }
     for (const q of c.bodies) rect(Math.round(wsx(q.x, view.camX)) - 6, ly - Math.round(terrain(b.lane, q.x) * SC), 12, 1, P.dirtDD);
     const q0 = c.bodies[0], q1 = c.bodies[1];
-    if (c.slip > 0) { drawBikeSprite(ly - Math.round(q0.h * SC), q0.rot, 1, -2, 0, 0, Math.floor(b.spin / 2.2) & 1, Math.round(wsx(q0.x, view.camX))); return; }
+    if (c.slip > 0) { drawBikeSprite(ly - Math.round(q0.h * SC), q0.rot, 1, -2, 0, 0, Math.floor(b.spin / 2.2), Math.round(wsx(q0.x, view.camX))); return; }
     if (c.hinge && c.t0 === undefined) {                             // off a Redeemer: the bike, and him on his hinge, dropping, or lying there
       const H = c.hinge;
       drawUnsunk('bc', bikeBase(0, 0, 0, 0, false), q0.rot, q0.x, ly - q0.h * SC, ly, b.lane);
@@ -188,7 +190,7 @@ function drawBikeEntity() {
   if (b.loop) {                                                               // round the loop: drawn where the ring puts you
     const dx = Math.round(b.loopDX * SC), n = view.lamps.length, nf = view.fires.length, by = ly - Math.round(b.hv * SC);
     ctx.save(); ctx.translate(dx, 0);
-    drawBikeSprite(by, b.angle, 0, b.rdm && rdmStage(b.rdm.p) ? rdmBody(rdmNum(b)) : b.turbo > 0 ? 2 : 0, b.rdm && rdmStage(b.rdm.p) ? 5 : 0, Math.floor(b.spin / 4.4) & 1, Math.floor(b.spin / 2.2) & 1);
+    drawBikeSprite(by, b.angle, 0, b.rdm && rdmStage(b.rdm.p) ? rdmBody(rdmNum(b)) : b.turbo > 0 ? 3 : 0, b.rdm && rdmStage(b.rdm.p) ? 5 : 0, Math.floor(b.spin / 4.4) & 1, Math.floor(b.spin / 2.2));
     ctx.restore(); for (let k = n; k < view.lamps.length; k++) view.lamps[k][0] += dx; for (let k = nf; k < view.fires.length; k++) view.fires[k][0] += dx;
     return;
   }
@@ -201,13 +203,13 @@ function drawBikeEntity() {
     if (b.landT > 0) mode = 3;
     if (r > 0.42 || (inp.back && r > 0.25)) body = -2; else if (r > 0.1 || (b.lean < -0.5 && r > 0)) body = -1;
     else if (r < -0.25) body = 2; else if (r < -0.07 || b.lean > 0.5) body = 1;
-    if (b.turbo > 0 && body >= 0) body = 2;                                   // duck down behind the bars when the turbo kicks
+    if (b.turbo > 0 && body >= 0) body = 3;                                   // duck down behind the bars when the turbo kicks (3: as 2 on a bike, but a drawn ride tucks rather than brakes)
     if (b.v > 60) bob = Math.floor(b.spin / (b.wasMud ? 2.2 : 4.4)) & 1;
   } else {
     mode = b.vy > 0 ? 1 : 2; body = inp.back ? -1 : inp.fwd ? 1 : 0;
     if (b.turbo > 0 && !inp.back && !inp.fwd) body = 1;
     if (b.trick === 'superman' && b.trickP > 0) { mode = 4; body = Math.max(1, Math.ceil(b.trickP * 3 - 0.01)); }
-    if (b.trick === 'invert' && b.trickP > 0) { drawInvert(by, b.angle, b.trickP, Math.floor(b.spin / 2.2) & 1); return; }
+    if (b.trick === 'invert' && b.trickP > 0) { drawInvert(by, b.angle, b.trickP, Math.floor(b.spin / 2.2)); return; }
   }
   if (b.rdm && rdmStage(b.rdm.p)) { mode = 5; body = rdmBody(rdmNum(b)); }   // REDEEMER (or on the way up or down)
   const look = game.state === 'replay' ? b.mvRec : moveLook(b);              // HEADSTAND / SUPER MARIO
@@ -220,7 +222,7 @@ function drawBikeEntity() {
   // danger zone (the tilt gauge's yellow-to-red, just short of going over backwards): the front wheel shimmies and a hand flails
   const dz = (game.state === 'play' || game.state === 'replay') && b.grounded && !b.loop && b.rel > 0 && b.rel > (b.thr || 0.66) * 0.8 ? 1 + (Math.floor(game.tNow * 12) & 1) : 0;
   drawProf();
-  drawBikeSprite(by, b.angle, b.pivotT, body, mode, bob, Math.floor(b.spin / 2.2) & 1, undefined, 0, dz, (look && look[0] === 7) || (game.tut && game.tut.stage === 'intro'));
+  drawBikeSprite(by, b.angle, b.pivotT, body, mode, bob, Math.floor(b.spin / 2.2), undefined, 0, dz, (look && look[0] === 7) || (game.tut && game.tut.stage === 'intro'));
   if (look && look[0] === 7) drawMarioJump(BIKE_SX, by, look, 0);
   if (b.hado) drawHado(BIKE_SX, by, b.angle, b.hado.t);
 }

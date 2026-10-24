@@ -54,7 +54,7 @@ doc is the plan for splitting it, and the record of how the split came out.
 | `input/` | `pad` (D-pad, keyboard, taps, secret codes) |
 | `gfx/` | `pixel` (rects, font, rotated frames), `riderSprites`, `backdrop`, `scenery`, `road`, `bike`, `vehicles`, `lighting`, `render` |
 | `ui/` | `title`, `menu` (what a press does), `overlay`, `hud`, `podium` |
-| `art/` | the pixel-art and image tables, and `assets.js` (PNG lookup and loading) |
+| `art/` | the pixel-art and image tables (`riders`, `bodies`, `rides`, `podium`, ...), and `assets.js` (PNG lookup and loading) |
 | `attract/` | the title-screen intro video and its scenes |
 | `assets/` | the 135 PNGs, named by where they sit in the art tables |
 | | `main.js` (entry and frame loop), `debug.js` (`window.__scramble` test hooks), `game.css` |
@@ -158,6 +158,30 @@ game page fits at 320×568, 375×667, 390×844, 844×390, 700×512, 900×600,
   - The canvas changes shape only under the wipe, when it covers the screen in
     the night colour. Frame-to-frame change at every transition was measured
     no larger than the motion inside a scene.
+
+## Since the split (the Super Bike Workshop)
+
+The equivalence check above is of the split itself. These changes came after
+it, from the owner's Workshop, and change what is drawn on purpose:
+
+- **No pixel filter.** The screen is scaled up smooth (`image-rendering: auto`
+  in `game.css`, smoothing on in `attract/wide.js`).
+- **RotSprite** for every turned sprite (`rotSprite()` in `gfx/pixel.js`):
+  Scale2x three times to 8x, then each output pixel sampled from the rotated
+  8x picture. `rotFrame()` (bikes and riders in the air), the title rider and
+  the podium figures all go through it, cached by frame.
+- **The podium figures** are drawn from `ui/podium.js` (`podFigure`), and each
+  racer wears their wipeouts (`wipeouts` in `race/rivals.js`).
+- **Heads and bodies.** Three heads in `art/riders.js` (`K_HEADS`), and a BODY
+  row in Edit Player, drawn from `art/bodies.js` and painted by the hooks in
+  `gfx/riderSprites.js` (`BODY_PAINT`).
+- **Six drawn rides** in `art/rides.js`: superbike, chopper, bicycle, horse,
+  unicycle, skateboard. The drawing code is the Workshop's, copied as it is;
+  `RIDES` beside it says how each one sits in the game (wheel points, box,
+  how it flips, how fast it cycles, whether it has a lamp). `rideBikes()`
+  turns each into a `K_BIKES` entry, so the rest of the game treats a ride as
+  a bike. A ride's frame is a number that keeps counting
+  (`bikeFrame()` folds it), not the old two-frame tread swap.
 
 ## Not done yet
 

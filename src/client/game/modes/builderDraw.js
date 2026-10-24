@@ -117,11 +117,10 @@ export function drawBuilderOverlay() {
     dim();
     text('EDIT PLAYER', W / 2, 3, P.turbo, 2, 'center');
     rect(16, 19, W - 32, 40, '#14208a'); rect(16, 56, W - 32, 3, '#5a78f0');          // a little stage: on the bike, and standing
-    const bb = bikeBase(0, 0, 0, Math.floor(game.tNow * 6) & 1, true, 0, 0);
+    const bb = bikeBase(0, 0, 0, Math.floor(game.tNow * 6), true, 0, 0);
     ctx.drawImage(bb, W / 2 - 26 - bb.ax, 56 - bb.ay);
     drawPodFigure('stand', 0, LOOK_HEADS[look.head], 0, 0, W / 2 + 35, 36);   // standing, facing us (as on the podium)
     rect(16, 61, W - 32, 88, '#14208a'); rect(16, 61, W - 32, 1, P.white); rect(16, 148, W - 32, 1, P.white);
-    const px1 = (x0, y0) => (x, y, c) => { ctx.fillStyle = c; ctx.fillRect(x0 + x, y0 + y, 1, 1); };   // thumbnails: one pixel per Kenney pixel
     [...LOOK_ROWS, ['BACK TO MENU']].forEach((r, i) => {
       const [, k, list, kind] = r, y = LP_Y0 + i * LP_DY | 0, on = i === menu.lpRow;
       if (on) { rect(20, y - 1, W - 40, 9, '#2d46d6'); rect(20, y - 1, 2, 9, P.turbo); }
@@ -133,8 +132,8 @@ export function drawBuilderOverlay() {
         rect(sx - 1, y, 22, 9, on ? P.white : P.white); rect(sx, y + 1, 10, 7, c[0]); rect(sx + 10, y + 1, 10, 7, c[1]); }
       else if (kind === 'body') { FRONT_BODY[LOOK_BODIES[look.body]].rows.forEach((row, yy) => { for (let xx = 0; xx < row.length; xx++) if (row[xx] !== '.') { ctx.fillStyle = kCol(row[xx], 0); ctx.fillRect(sx + 6 + xx, y + 1 + yy, 1, 1); } }); }   // the torso, facing us
       else if (kind === 'head') { const H = K_HEADS[LOOK_HEADS[look.head]], z = H.art.length > 6 ? 1 : 2, x0 = sx + 10 - Math.round(z * H.art[0].length / 2), y0 = y + 9 - z * H.art.length; kPaintHead((x, yy, c) => { ctx.fillStyle = c; ctx.fillRect(x0 + z * x, y0 + z * yy, z, z); }, LOOK_HEADS[look.head], 0, 0, 0); }   // heads at game size (the tall ones at half, to fit the row)
-      else { const B = K_BIKES[look.bikeType], gr = kBikeGrid(0, 0, 0), w = gr[0].length; let top = 0; while (top < gr.length && gr[top].every(c => c === '.')) top++;
-        const put = px1(sx + 10 - (w >> 1), y + 8 - gr.length + 1); gr.forEach((row, yy) => row.forEach((ch, xx) => { if (ch !== '.') put(xx, yy, kCol(ch, 0)); })); }
+      else { const th = bikeThumb(look.bikeType), s = Math.min(1, 9 / th.height, 30 / th.width), w = th.width * s, h = th.height * s;   // a tall ride (the horse) scaled down to fit the row
+        ctx.drawImage(th, Math.round(sx + 10 - w / 2), y + 9 - h, w, h); }
       if (on) for (let d = 0; d < 4; d++) { rect(sx - 10 + d, y + 4 - d, 1, 1 + 2 * d, P.white); rect(sx + 29 - d, y + 4 - d, 1, 1 + 2 * d, P.white); }   // arrows: left/right changes it
     });
   } else if (game.state === 'buildset') {
@@ -158,4 +157,20 @@ export function drawBuilderOverlay() {
     text(t.pieces.length + ' PIECES  ' + t.len + 'M' + (t.best ? '  BEST ' + fmtTime(t.best) : ''), W / 2, 139, t.len >= MIN_LEN ? P.muted : P.flag, 1, 'center');
     drawTooShort(70);
   }
+}
+
+// The BIKE row's thumbnail: the ride standing still, riderless, cropped to its pixels, one canvas pixel per Kenney pixel.
+// Kept until the ride or its colours change.
+let thumb = null, thumbKey = '';
+function bikeThumb(type) {
+  const gr = kBikeGrid(0, 0, 0), key = type + [...new Set(gr.flat())].map(ch => ch + kCol(ch, 0)).join();
+  if (thumb && key === thumbKey) return thumb;
+  let top = 0, bot = gr.length, l = gr[0].length, r = 0;
+  while (top < bot && gr[top].every(c => c === '.')) top++;
+  while (bot > top && gr[bot - 1].every(c => c === '.')) bot--;
+  for (let yy = top; yy < bot; yy++) gr[yy].forEach((ch, xx) => { if (ch !== '.') { l = Math.min(l, xx); r = Math.max(r, xx + 1); } });
+  const c = document.createElement('canvas'); c.width = Math.max(1, r - l); c.height = Math.max(1, bot - top);
+  const g = c.getContext('2d');
+  for (let yy = top; yy < bot; yy++) gr[yy].forEach((ch, xx) => { if (ch !== '.') { g.fillStyle = kCol(ch, 0); g.fillRect(xx - l, yy - top, 1, 1); } });
+  thumbKey = key; return (thumb = c);
 }

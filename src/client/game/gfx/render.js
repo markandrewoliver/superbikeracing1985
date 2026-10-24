@@ -70,7 +70,7 @@ export function render() {
     }
   } else if (menuish) {                                       // idle wheelie demo behind the title
     const a = Math.max(0, 0.32 + 0.3 * Math.sin(game.tNow * 1.8));
-    drawBikeSprite(LANE_SY[1], a, a > 0.03 ? 1 : 0, a > 0.4 ? -2 : a > 0.05 ? -1 : 0, 0, Math.floor(game.tNow * 8) & 1, Math.floor(view.titleScroll / 7 / 2.2) & 1);
+    drawBikeSprite(LANE_SY[1], a, a > 0.03 ? 1 : 0, a > 0.4 ? -2 : a > 0.05 ? -1 : 0, 0, Math.floor(game.tNow * 8) & 1, Math.floor(view.titleScroll / 7 / 2.2));
   } else {
     // Back lane to front: each lane's ground and obstacles, then the riders in it, so a ramp or
     // hill in a nearer lane correctly hides a rider behind it.

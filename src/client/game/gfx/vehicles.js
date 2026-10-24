@@ -76,7 +76,7 @@ export function drawRival(o) {
     return;
   }
   const sx = wsx(o.x, view.camX) + (o.loop ? o.loopDX * SC : 0); if (sx < -50 || sx > W + 50) return;
-  if (o.loop) { drawBikeSprite(ly - Math.round(o.hv * SC), o.angle, 0, 0, 0, Math.floor(o.spin / 4.4) & 1, Math.floor(o.spin / 2.2) & 1, Math.round(sx), th); return; }
+  if (o.loop) { drawBikeSprite(ly - Math.round(o.hv * SC), o.angle, 0, 0, 0, Math.floor(o.spin / 4.4) & 1, Math.floor(o.spin / 2.2), Math.round(sx), th); return; }
   const gy = ly - Math.round(terrain(o.lane, o.x) * SC), by = ly - Math.round(o.hv * SC);
   const air = clamp((gy - by) / 24, 0, 1), sw = Math.round(20 - air * 10);
   rect(Math.round(sx) - (sw >> 1), gy, sw, 2, P.dirtDD);
@@ -88,12 +88,12 @@ export function drawRival(o) {
   } else {
     mode = o.vy > 0 ? 1 : 2;
     if (o.trick === 'superman' && o.trickP > 0) { mode = 4; body = Math.max(1, Math.ceil(o.trickP * 3 - 0.01)); }
-    if (o.trick === 'invert' && o.trickP > 0) { drawInvert(by, o.angle, o.trickP, Math.floor(o.spin / 2.2) & 1, Math.round(sx), th); return; }
+    if (o.trick === 'invert' && o.trickP > 0) { drawInvert(by, o.angle, o.trickP, Math.floor(o.spin / 2.2), Math.round(sx), th); return; }
   }
   if (o.rdm && rdmStage(o.rdm)) { mode = 5; body = rdmBody(o.rdm); }   // (a ghost of a run with a REDEEMER in it)
   if (o.mv) { mode = o.mv[0]; body = o.mv[1]; }                          // (...or a HEADSTAND or SUPER MARIO)
   const mj = o.mv && o.mv[0] === 7;
-  drawBikeSprite(by, o.angle, o.grounded && o.rel > 0.04 ? 1 : 0, body, mode, bob, Math.floor(o.spin / 2.2) & 1, Math.round(sx), th, 0, mj);
+  drawBikeSprite(by, o.angle, o.grounded && o.rel > 0.04 ? 1 : 0, body, mode, bob, Math.floor(o.spin / 2.2), Math.round(sx), th, 0, mj);
   if (mj) drawMarioJump(Math.round(sx), by, o.mv, th);
   if (o.hdT >= 0) drawHado(Math.round(sx), by, o.angle, o.hdT);
 }

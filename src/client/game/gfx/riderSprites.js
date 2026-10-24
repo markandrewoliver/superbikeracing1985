@@ -2,24 +2,21 @@
 
 import { KTHEMES, K_BIKES, K_HEADS, K_PAL, K_PEOPLE, K_ROLE } from '../art/riders.js';
 import { BODY_DETAIL } from '../art/bodies.js';
+import { rideFrame } from '../art/rides.js';
 import { ctx } from '../core/canvas.js';
 import { view } from '../core/state.js';
-import { clamp } from '../core/util.js';
+import { clamp, kLine } from '../core/util.js';
 import { FC } from './pixel.js';
 
 export const kCol = (ch, th) => KTHEMES[th][ch] || K_PAL[ch];
 const kBike = (th) => K_BIKES[KTHEMES[th || 0].bike || 0];
 export const KS = 2, BASE_W = 72, BASE_H = 74, AX = 36, AY = 64;   // anchor = ground under the middle of the bike
-function kLine(a, b) {
-  let x0 = Math.round(a[0]), y0 = Math.round(a[1]); const x1 = Math.round(b[0]), y1 = Math.round(b[1]);
-  const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let e = dx + dy; const pts = [];
-  for (;;) { pts.push([x0, y0]); if (x0 === x1 && y0 === y1) break; const e2 = 2 * e; if (e2 >= dy) { e += dy; x0 += sx; } if (e2 <= dx) { e += dx; y0 += sy; } }
-  return pts;
-}
 // rider joints in Kenney px, origin = ground under the middle of the bike (each bike has its own seat and bars).
 // body: -2 wheelie ... +2 tucked; mode: 0 ground, 1 rising, 2 falling, 3 landing squash, 4 superman (body = stage 1-3)
-function kPose(body, mode, bob, th) {
-  const N = kBike(th).N, j = { hip: N.hip.slice(), K: N.K.slice(), F: N.F.slice(), S: N.S.slice(), G: N.G.slice(), hd: [0, 0] };
+// N0: the joints to start from, when a drawn ride gives them for this very frame (else the bike's at rest)
+function kPose(body, mode, bob, th, N0) {
+  const N = N0 || kBike(th).N, j = { hip: N.hip.slice(), K: N.K.slice(), F: N.F.slice(), S: N.S.slice(), G: N.G.slice(), hd: N0 && N0.hd ? N0.hd.slice() : [0, 0] };
+  if (N0 && mode <= 3) for (const k of ['K2', 'F2', 'G2']) if (N0[k]) j[k] = N0[k].slice();   // (a drawn ride's far leg and arm: pedalling, the stirrups)
   const d = [N.S[0] + 1, N.S[1] + 11];                                 // (superman is placed for the street bike; shift it onto this one)
   const mv = (k, dx, dy) => { j[k][0] += dx; j[k][1] += dy; };
   if (mode === 0) {
@@ -141,6 +138,7 @@ function kPaintRider(put, j, th) {
 }
 export function kBikeGrid(wf, dz, th) {
   const B = kBike(th), g = B.grid.map(r => r.split('')), tA = K_ROLE.tA, tB = K_ROLE.tB, H = g.length;
+  if (B.drawn) return g;                                               // (a drawn ride: its still picture)
   if (wf) for (let y = H - 5; y < H; y++) for (const [x0, x1] of B.wheels) for (let x = x0; x <= x1; x++) {   // the tyres' tread moves on a frame
     if (g[y][x] === tA) g[y][x] = tB; else if (g[y][x] === tB) g[y][x] = tA;
   }
@@ -151,21 +149,38 @@ export function kBikeGrid(wf, dz, th) {
   }
   return g;
 }
-function paintBike(g, body, mode, bob, wf, rider, dz, th) {   // rider: 0 bike only, 1 both
+// What a drawn ride is doing, from the painter's arguments: lean (body: -2..-1 back, 1..2 forward, 3 tucked behind the
+// bars on a turbo) and mode (0 riding, 1/2 in the air, 3 landing, 4-7 the held stunts and secret moves). No rider: the wreck.
+function rideMode(B, body, mode, rider) {
+  if (!rider) return B.drawn.id === 'horse' ? 'stand' : 'crash';
+  if (mode === 1 || mode === 2 || mode === 4 || mode === 7) return 'air';
+  if (mode >= 5) return 'ride';
+  return body <= -1 ? 'wheelie' : body === 1 || body === 2 ? 'brake' : 'ride';
+}
+function paintBike(g, body, mode, bob, wf, rider, dz, th) {   // rider: 0 bike only, 1 both, 2 rider only
   th = th || 0; const B = kBike(th);
   const put = (x, y, c) => { g.fillStyle = c; g.fillRect(AX + x * KS, AY + y * KS, KS, KS); };
+  if (B.drawn) {                                                       // a drawn ride: this frame of it, and the rider where it puts him
+    const rm = rideMode(B, body, mode, rider);
+    const J = rideFrame(B.drawn, rider !== 2 ? (x, y, c) => put(Math.round(x), Math.round(y), kCol(c, th)) : () => {}, rm, wf, false);
+    if (!rider) return;
+    if (mode >= 4) { kPaintRider(put, kPose(body, mode, bob, th), th); return; }   // (the stunts are placed on the ride at rest, as on any bike)
+    const r = {}; for (const k in J) r[k] = Array.isArray(J[k]) ? J[k].map(Math.round) : J[k];
+    kPaintRider(put, kPose(rm === 'ride' ? body : 0, mode === 3 ? 3 : 0, bob, th, r), th);   // (wheelie, brake and air are in the drawing already)
+    return;
+  }
   if (rider !== 2) kBikeGrid(wf, dz, th).forEach((row, y) => row.forEach((ch, x) => { if (ch !== '.') put(x + B.ox, y + B.oy, kCol(ch, th)); }));
   if (rider) kPaintRider(put, kPose(body, mode, bob, th), th);
 }
 // where things are on each bike, in screen px from the anchor: the rear wheel (wheelies pivot on it), the headlight, the exhaust
 export const kRear = (th) => { const B = kBike(th); return ((B.wheels[0][0] + B.wheels[0][1] + 1) / 2 + B.ox) * KS; };
-export const kLamp = (th) => { const B = kBike(th); return [(B.wheels[1][1] + B.ox) * KS - 2, (B.oy + B.grid.length - 7) * KS]; };
+export const kLamp = (th) => { const B = kBike(th); if (B.drawn) return B.drawn.lamp ? [B.drawn.lamp[0] * KS, B.drawn.lamp[1] * KS] : null; return [(B.wheels[1][1] + B.ox) * KS - 2, (B.oy + B.grid.length - 7) * KS]; };   // (null: no headlight)
 export const kExhaust = (th) => { const B = kBike(th); return [B.ox * KS - 1, -10]; };
 // the rider lets the bike swing over his hands and drops to hang under the bars: legs trail, then swing through and settle
 const K_FLIPKEYS = { 0: { hip: [-3, -9], K: [-1, -8], F: [-3, -5], S: [-1, -13] }, 2: { hip: [-3, -7], K: [-1, -5], F: [-3, -3], S: [-1, -11] },
   4: { hip: [-2, -4], K: [-4, -2], F: [-6, -1], S: [0, -8] }, 6: { hip: [-1, -2], K: [-2, 1], F: [-4, 3], S: [0, -6] }, 8: { hip: [-1, -2], K: [0, 1], F: [-1, 4], S: [0, -6] } };
 function kFlipPose(i, th) {
-  const G = kBike(th).N.G, d = [G[0] - 2, G[1] + 9];                   // (keyed to the street bike's bars; moved to this bike's)
+  const B0 = kBike(th), G = B0.flipG || B0.N.G, d = [G[0] - 2, G[1] + 9];   // (keyed to the street bike's bars; moved to this bike's, or the unicycle's seat)
   const a = i - (i % 2), b = Math.min(8, a + 2), u = (i - a) / 2, A = K_FLIPKEYS[a], B = K_FLIPKEYS[b], j = { G: G.slice(), hd: [0, 0] };
   for (const k of ['hip', 'K', 'F', 'S']) j[k] = [Math.round(A[k][0] + (B[k][0] - A[k][0]) * u) + d[0], Math.round(A[k][1] + (B[k][1] - A[k][1]) * u) + d[1]];
   return j;
@@ -177,7 +192,7 @@ export function flipBase(i, theme) {
   const g = c.getContext('2d'), put = (x, y, col) => { g.fillStyle = col; g.fillRect(AX + x * KS, AY + y * KS, KS, KS); };
   const B = kBike(theme), [y0, rows] = B.flip[i];
   rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) if (row[x] !== '.') put(x + B.ox, y0 + y, kCol(row[x], theme)); });   // the bike, behind him
-  kPaintRider(put, kFlipPose(i, theme), theme);
+  kPaintRider(put, B.drawn && B.drawn.flip === 'spin' ? B.airJ : kFlipPose(i, theme), theme);   // (the board turns under his feet; anything else he hangs from)
   skullTag(c, theme); flipBases.set(key, c); return c;
 }
 export const footBases = new Map();
@@ -212,8 +227,11 @@ export function footBase(name, theme) {                                       //
   skullTag(c, theme); footBases.set(key, c); return c;
 }
 export const bikeBases = new Map();
+// wf: the wheel frame, counted up as the bike rolls (callers pass it whole): two frames of tread on a bike, a drawn
+// ride's own number of frames along its loop. bikeFrame() folds it into that range (and so into cache keys).
+export const bikeFrame = (wf, theme) => { const B = kBike(theme || 0), n = B.drawn ? B.drawn.frames : 2; return ((Math.floor(wf) % n) + n) % n; };
 export function bikeBase(body, mode, bob, wf, rider, theme, dz) {
-  theme = theme || 0; dz = dz || 0;
+  theme = theme || 0; dz = dz || 0; wf = bikeFrame(wf, theme);
   const key = body + '|' + mode + '|' + bob + '|' + wf + '|' + (rider ? +rider : 0) + '|' + theme + '|' + dz; let c = bikeBases.get(key); if (c) return c;
   c = document.createElement('canvas'); c.width = BASE_W; c.height = BASE_H; c.ax = AX; c.ay = AY;
   paintBike(c.getContext('2d'), body, mode, bob, wf, rider, dz, theme); bikeBases.set(key, c);

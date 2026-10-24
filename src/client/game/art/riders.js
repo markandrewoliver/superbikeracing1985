@@ -1,5 +1,7 @@
 // Rider, head and bike pixel art, and the rivals' colour themes.
 
+import { RIDE_PAL, rideBikes } from './rides.js';
+
 // Racers: Kenney's motorcycle (kenney.nl, CC0) with a rider painted in the same style from a skeleton,
 // so every pose the game needs exists. 1 Kenney px = 2 screen px. Off-bike poses are Kenney's own people
 // in our helmet and a long-sleeved one-piece suit. Role letters s/S suit, b/B bike, r helmet stripe.
@@ -51,3 +53,7 @@ function draftPeople(key) {
   return out;
 }
 for (const k of ['stache3', 'flag_us', 'prof2']) K_PEOPLE[k] = draftPeople(k);
+
+// THE NEW RIDES (art/rides.js): drawn from code, frame by frame, and added to the bikes EDIT PLAYER offers.
+Object.assign(K_PAL, RIDE_PAL);
+K_BIKES.push(...rideBikes());
