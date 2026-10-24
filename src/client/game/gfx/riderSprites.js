@@ -1,6 +1,7 @@
 // Painting riders and bikes from the pixel art in any pose, colour theme and rotation, with caches.
 
 import { KTHEMES, K_BIKES, K_HEADS, K_PAL, K_PEOPLE, K_ROLE } from '../art/riders.js';
+import { BODY_DETAIL } from '../art/bodies.js';
 import { ctx } from '../core/canvas.js';
 import { view } from '../core/state.js';
 import { clamp } from '../core/util.js';
@@ -83,8 +84,24 @@ export function kPaintHead(put, head, x0, y0, th) {
   const T = KTHEMES[th], H = K_HEADS[head], C = { R: T.r, W: kCol('f', th), G: kCol('h', th), V: K_PAL.e, v: K_PAL.g, h: kCol('f', th), s: kCol('i', th), S: kCol('j', th) };
   H.art.forEach((row, y) => { for (let x = 0; x < row.length; x++) if (row[x] !== '.') put(x0 + x, y0 + y, C[row[x]] || K_PAL[row[x]]); });
 }
+// A body's shape on the bike (art/bodies.js): coat tails behind his hips, the shirt front (two columns down from the
+// shoulder: collar, tie, zip), and long sleeves.
+function chest(put, j, rows, T) {                                   // rows[i]: the front two columns (x+1, x+2) going down from the shoulder; 'S' is the shirt shade
+  const pts = kLine(j.hip, j.S).reverse();
+  rows.forEach((r, i) => { const p = pts[i]; if (!p) return; const c = (k) => k === 'S' ? T.S : K_PAL[k]; if (r[0]) put(p[0] + 1, p[1], c(r[0])); if (r[1]) put(p[0] + 2, p[1], c(r[1])); });
+}
+function tails(put, j, n, c1, c2) {                                 // a coat hanging on past his hips, out behind him
+  const dx = j.hip[0] - j.S[0], dy = j.hip[1] - j.S[1], L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, bx = -uy;
+  for (let k = 1; k <= n; k++) { const x = j.hip[0] + ux * k - Math.abs(bx) * 1.5 - k * 0.6, y = j.hip[1] + uy * k + 0.3 * k; put(Math.round(x), Math.round(y), c2); put(Math.round(x) + 1, Math.round(y), c1); }
+}
+const BODY_PAINT = {
+  prof: { longSleeve: true, back: (put, j, T) => tails(put, j, 3, T.s, T.S),
+    front: (put, j, T) => chest(put, j, [['a', 'l'], ['S', 'l'], ['S', 'l'], [null, 'l']], T) },   // light-blue shirt, red tie (up to the neck)
+  leather: { longSleeve: true, back: (put, j, T) => tails(put, j, 1, T.s, T.S),
+    front: (put, j, T) => { chest(put, j, [['S', 'c'], ['g', 'c'], [null, 'c'], ['g', null]], T); const S = j.S; put(S[0] - 1, S[1] - 1, T.S); put(S[0], S[1] - 1, T.S); } }   // turned-up collar, white T-shirt, zip
+};
 function kPaintRider(put, j, th) {
-  const T = KTHEMES[th], s = T.s, sd = T.S, R = K_ROLE;
+  const T = KTHEMES[th], s = T.s, sd = T.S, R = K_ROLE, BP = BODY_PAINT[T.body] || {};
   const flat = (a, b) => Math.abs(b[0] - a[0]) > Math.abs(b[1] - a[1]);
   const thick = (a, b, r, col, back, bt) => {                         // a limb lying flatter than upright keeps its width across the limb
     const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy || 1, L = Math.sqrt(L2), bx = dy / L, by = -dx / L;   // (bx, by): its back
@@ -104,20 +121,22 @@ function kPaintRider(put, j, th) {
   const F = j.F, bt = K_PAL[R.boot];
   put(F[0], F[1], bt); put(F[0] + 1, F[1], bt); put(F[0] + 2, F[1], bt); put(F[0], F[1] + 1, bt); put(F[0] + 1, F[1] + 1, bt);
   if (j.G2) { const pts2 = kLine([j.S[0] - 1, j.S[1] + 1], j.G2); pts2.forEach((p, i) => { put(p[0], p[1], i < pts2.length - 1 ? sd : kCol(R.skinD, th)); put(p[0], p[1] + 1, i < pts2.length - 1 ? sd : kCol(R.skinD, th)); }); }   // the far arm, behind him
+  if (BP.back) BP.back(put, j, T);                                     // (a coat's tails, behind him)
   if (flat(j.hip, j.S)) thick(j.hip, j.S, 2.3, s, sd, 1.3);           // superman: stretched out flat, still a full body thick
   else {
     for (const p of kLine(j.hip, j.S)) { put(p[0] - 2, p[1], sd); put(p[0] - 1, p[1], s); put(p[0], p[1], s); put(p[0] + 1, p[1], s); put(p[0] + 2, p[1], s); }
     for (const p of kLine([j.hip[0] - 2, j.hip[1] + 1], [j.hip[0] + 2, j.hip[1] + 1])) put(p[0], p[1], sd);
     for (let x = -2; x <= 2; x++) put(j.S[0] + x, j.S[1], x === -2 ? sd : s);
   }
+  if (BP.front && !flat(j.hip, j.S)) BP.front(put, j, T);           // (shirt front, tie, collar)
   const H = K_HEADS[T.head || 'helmet'];
   if (j.inv) { const n = H.art.length; kPaintHead((x, y, c) => put(x, j.S[1] + n - y, c), T.head || 'helmet', j.S[0] + H.ax, 0, th); }   // (upside down, below his shoulders)
   else if (j.rot) { const n = H.art.length; kPaintHead((x, y, c) => put(j.rot[0] + (n - 1 - y), j.rot[1] + x, c), T.head || 'helmet', 0, 0, th); }   // (turned on its side: crown forward, face down)
   else kPaintHead(put, T.head || 'helmet', j.S[0] + H.ax + j.hd[0], j.S[1] + H.ay + j.hd[1], th);
   const pts = kLine([j.S[0] + 1, j.S[1] + 1], j.G);                   // arm to the grip: sleeve, then glove
   pts.forEach((p, i) => {
-    put(p[0], p[1], i < 3 ? s : i < pts.length - 1 ? kCol(R.skin, th) : kCol(R.skinD, th));
-    put(p[0], p[1] + 1, i < 3 ? sd : kCol(R.skinD, th));
+    put(p[0], p[1], i < (BP.longSleeve ? pts.length - 1 : 3) ? s : i < pts.length - 1 ? kCol(R.skin, th) : kCol(R.skinD, th));
+    put(p[0], p[1] + 1, i < (BP.longSleeve ? pts.length - 1 : 3) ? sd : kCol(R.skinD, th));
   });
 }
 export function kBikeGrid(wf, dz, th) {
@@ -162,10 +181,31 @@ export function flipBase(i, theme) {
   skullTag(c, theme); flipBases.set(key, c); return c;
 }
 export const footBases = new Map();
+// Off the bike, a body's details go onto the head's own sprite rows: found by matching the helmet's legs (below any
+// beard), and only onto clothes (s S p P), so hair or a beard over the chest stays on top.
+const bodyAt = new Map();
+function bodyAnchor(head, name) {
+  const key = head + '|' + name; if (bodyAt.has(key)) return bodyAt.get(key);
+  const ref = K_PEOPLE.helmet[name].slice(5).map(r => r.replace(/\.+$/, '')), rows = (K_PEOPLE[head] && K_PEOPLE[head][name]) || K_PEOPLE.helmet[name]; let at = null;
+  for (let dy = 0; dy < rows.length && !at; dy++) for (let dx = -3; dx <= 3 && !at; dx++) {
+    let ok = true;
+    for (let i = 3; i < ref.length; i++) { const r = rows[dy + i]; if (r === undefined) { ok = false; break; } const seg = dx >= 0 ? r.slice(dx) : '.'.repeat(-dx) + r; if (seg.replace(/\.+$/, '') !== ref[i]) { ok = false; break; } }
+    if (ok) at = [dx, dy];
+  }
+  bodyAt.set(key, at); return at;
+}
+function dressed(rows, head, name, body) {
+  const D = BODY_DETAIL[body] && BODY_DETAIL[body][name], at = D && bodyAnchor(head, name);
+  if (!D || !at) return rows;
+  const g = rows.map(r => r.split(''));
+  for (const [x, y, c] of D) { const X = x + at[0], Y = y + at[1]; if (g[Y] && 'sSpP'.includes(g[Y][X])) g[Y][X] = c; }
+  return g.map(r => r.join(''));
+}
 export function footBase(name, theme) {                                       // stand, walk0/1, sit, lift, jump, rag (tumbling), down (lying)
   theme = theme || 0;
   const key = name + theme; let c = footBases.get(key); if (c) return c;
-  const set = K_PEOPLE[KTHEMES[theme].head || 'helmet'], gr = (set && set[name]) || K_PEOPLE.helmet[name], w = gr[0].length, h = gr.length;   // (a drafted head without this pose wears the helmet's)
+  const head = KTHEMES[theme].head || 'helmet', set = K_PEOPLE[head], has = !!(set && set[name]);   // (a drafted head without this pose wears the helmet's)
+  const gr = dressed(has ? set[name] : K_PEOPLE.helmet[name], has ? head : 'helmet', name, KTHEMES[theme].body), w = gr[0].length, h = gr.length;
   c = document.createElement('canvas'); c.width = w * KS; c.height = h * KS; c.ax = Math.round(w * KS / 2); c.ay = name === 'rag' ? h : h * KS;   // the tumbling body spins about its middle
   const g = c.getContext('2d');
   gr.forEach((row, y) => { for (let x = 0; x < w; x++) if (row[x] !== '.') { g.fillStyle = kCol(row[x], theme); g.fillRect(x * KS, y * KS, KS, KS); } });

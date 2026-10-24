@@ -9,7 +9,7 @@ import { builderPress, cycle, ed, openBuilder, openSlots, raceBuilt } from '../m
 import { endReplay, startGhostRace, startReplay } from '../modes/replay.js';
 import { startStunt } from '../modes/stunt.js';
 import { startTutorial, tutPress } from '../modes/tutorial.js';
-import { LOOK_ROWS, look, lookChanged } from '../race/playerLook.js';
+import { LOOK_ROWS, LP_DY, LP_Y0, lookStep } from '../race/playerLook.js';
 import { newGame } from '../race/session.js';
 import { RES_DY, resItems, resY } from './overlay.js';
 import { MENU, MROW, RSROWS, menuOff, menuTop } from './title.js';
@@ -42,10 +42,10 @@ export function anyPress(btn, tap) {
     if (r === 'RACE IT') { if (race.raceFeat === 'stunt') startStunt(); else startRace(); } else { game.state = 'title'; game.stateT = 0; }
   } else if (game.state === 'player') {                                // EDIT PLAYER: left/right changes the colour on the row
     const n = LOOK_ROWS.length + 1;
-    if (tap) { const i = Math.floor((tap.y - 63) / 10.5); if (i < 0 || i >= n) return; if (i !== menu.lpRow) { menu.lpRow = i; sfx('lane'); if (i === n - 1) return; } if (i < n - 1) btn = tap.x < W / 2 ? 'left' : 'right'; else btn = 'ok'; }
+    if (tap) { const i = Math.floor((tap.y - LP_Y0 + 1) / LP_DY); if (i < 0 || i >= n) return; if (i !== menu.lpRow) { menu.lpRow = i; sfx('lane'); if (i === n - 1) return; } if (i < n - 1) btn = tap.x < W / 2 ? 'left' : 'right'; else btn = 'ok'; }
     if (btn === 'up' || btn === 'down') { menu.lpRow = (menu.lpRow + (btn === 'up' ? n - 1 : 1)) % n; sfx('lane'); return; }
     if (game.stateT < 0.15) return;
-    if (menu.lpRow < LOOK_ROWS.length) { const [, k, list] = LOOK_ROWS[menu.lpRow]; look[k] = (look[k] + (btn === 'left' ? list.length - 1 : 1)) % list.length; lookChanged(); sfx('lane'); return; }
+    if (menu.lpRow < LOOK_ROWS.length) { lookStep(LOOK_ROWS[menu.lpRow][1], btn === 'left' ? -1 : 1); sfx('lane'); return; }
     if (btn === 'left') return;
     game.state = 'title'; game.stateT = 0;
   } else if (game.state === 'finish' && game.stateT > 2) {                  // results: REPLAY / VS. GHOST, or back to the menu

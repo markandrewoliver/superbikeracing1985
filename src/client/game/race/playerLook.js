@@ -9,16 +9,29 @@ export const LOOK_COLS = [['#fcfcfc', '#c4ccd8'], ['#bcbcbc', '#7c7c7c'], ['#3c3
   ['#00a800', '#006800'], ['#00a8a8', '#006868'], ['#3cbcfc', '#0078f8'], ['#0058f8', '#0038a8'], ['#0038a8', '#002070'], ['#6844fc', '#4428bc'], ['#f878f8', '#b83cb8'], ['#ac7c00', '#7c4800']];
 export const LOOK_SKIN = [['#ffe0bb', '#e3ae79'], ['#f0c090', '#c88850'], ['#d89060', '#a86030'], ['#a86030', '#7c4018'], ['#7c4818', '#542c0c'], ['#fcd8c8', '#e8a890']];
 export const LOOK_HEADS = ['helmet', 'short', 'long', 'bald', 'clown', 'skull', 'goggles', 'mx', 'bobby', 'cap', 'brodie', 'prof', 'stache3', 'flag_us', 'prof2'];
+export const LOOK_BODIES = ['rider', 'prof', 'leather'];          // (art/bodies.js) the suit, Suit and tie, Leather jacket
+// Picking one of these sets its colours (the player can change them after): a body's SHIRT and PANTS COLOR, a head's
+// HAIR COLOR. Indexes into LOOK_COLS.
+const BODY_DEFAULTS = { rider: { shirt: 9, pants: 10 }, prof: { shirt: 0, pants: 13 }, leather: { shirt: 2, pants: 10 } };
+const HEAD_DEFAULTS = { stache3: { helmet: 13 }, prof2: { helmet: 1 } };
 const HAIR_HEADS = new Set(['short', 'long', 'bald', 'clown', 'skull', 'prof', 'stache3', 'prof2']);   // these read HAIR COLOR (on the skull it colours the flames)
 // [label, key, choices, how the choice is shown]; HELMET COLOR reads HAIR COLOR without a helmet
-export const LOOK_ROWS = [['HEAD', 'head', LOOK_HEADS, 'head'], ['HELMET COLOR', 'helmet', LOOK_COLS, 'col'], ['SKIN COLOR', 'skin', LOOK_SKIN, 'col'], ['SHIRT COLOR', 'shirt', LOOK_COLS, 'col'],
+export const LOOK_ROWS = [['HEAD', 'head', LOOK_HEADS, 'head'], ['BODY', 'body', LOOK_BODIES, 'body'], ['HELMET COLOR', 'helmet', LOOK_COLS, 'col'], ['SKIN COLOR', 'skin', LOOK_SKIN, 'col'], ['SHIRT COLOR', 'shirt', LOOK_COLS, 'col'],
   ['PANTS COLOR', 'pants', LOOK_COLS, 'col'], ['BIKE', 'bikeType', K_BIKES.map((_, i) => i), 'bike'], ['BIKE COLOR', 'bike', LOOK_COLS, 'col']];
 export const lookLabel = (r) => r[1] === 'helmet' && HAIR_HEADS.has(LOOK_HEADS[look.head]) ? 'HAIR COLOR' : r[0];
-export const look = { head: 0, helmet: 0, skin: 0, shirt: 9, pants: 10, bikeType: 0, bike: 3 };
+export const LP_Y0 = 63, LP_DY = 9.25;                              // EDIT PLAYER: where the rows start, and how far apart (drawn and tapped alike)
+export const look = { head: 0, body: 0, helmet: 0, skin: 0, shirt: 9, pants: 10, bikeType: 0, bike: 3 };
 try { const v = JSON.parse(localStorage.getItem('super-bike-player') || 'null'); if (v) for (const [, k, list] of LOOK_ROWS) if (Number.isInteger(v[k]) && v[k] >= 0 && v[k] < list.length) look[k] = v[k]; } catch (e) {}
 export function applyLook() {                                                // rebuild the player's colours (and drop any sprites drawn in the old ones)
   const h = LOOK_COLS[look.helmet], k = LOOK_SKIN[look.skin], sh = LOOK_COLS[look.shirt], pa = LOOK_COLS[look.pants], bk = LOOK_COLS[look.bike];
-  KTHEMES[0] = { s: sh[0], S: sh[1], p: pa[0], P: pa[1], b: bk[0], B: bk[1], r: bk[0], f: h[0], h: h[1], i: k[0], j: k[1], head: LOOK_HEADS[look.head], bike: look.bikeType };
+  KTHEMES[0] = { s: sh[0], S: sh[1], p: pa[0], P: pa[1], b: bk[0], B: bk[1], r: bk[0], f: h[0], h: h[1], i: k[0], j: k[1], head: LOOK_HEADS[look.head], body: LOOK_BODIES[look.body], bike: look.bikeType };
+}
+// One row of EDIT PLAYER stepped on: a new body or head brings its own colours with it.
+export function lookStep(k, d) {
+  const list = LOOK_ROWS.find((r) => r[1] === k)[2];
+  look[k] = (look[k] + d + list.length) % list.length;
+  Object.assign(look, k === 'body' ? BODY_DEFAULTS[LOOK_BODIES[look.body]] : k === 'head' ? HEAD_DEFAULTS[LOOK_HEADS[look.head]] : null);
+  lookChanged();
 }
 export function lookChanged() {
   applyLook(); bikeBases.clear(); footBases.clear(); flipBases.clear(); frameCache.clear();

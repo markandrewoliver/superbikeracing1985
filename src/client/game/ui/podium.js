@@ -1,5 +1,6 @@
 // The podium after the finish.
 
+import { FRONT_BODY } from '../art/bodies.js';
 import { FRONT_HEADS, FRONT_OVER } from '../art/podium.js';
 import { KTHEMES } from '../art/riders.js';
 import { EXTRA, ctx } from '../core/canvas.js';
@@ -46,8 +47,9 @@ function podSpec(anim, t, hh) {
   const hand = t % 4 < 2 ? [3, 3] : [2, 4]; return { dy: 0, legs: 'stand', arms: { L: [[0, 3], hand], R: [[0, 3], hand] }, clap: t % 4 < 2 };   // the slow clap
 }
 // One frame of a figure: a map of 'x,y' -> palette letter; origin = top left of the body (9 wide), the head above it.
-export function podFigure(anim, t, head, lvl = 0) {
+export function podFigure(anim, t, head, lvl = 0, body = 'rider') {
   const g = new Map(), put = (x, y, c) => g.set(x + ',' + y, c), hd = FRONT_HEADS[head] || FRONT_HEADS.helmet, hh = hd.length, S = podSpec(anim, t, hh);
+  const B = FRONT_BODY[body] || FRONT_BODY.rider, sleeve = B.sleeve;   // (long sleeves: shirt colour on every arm pixel but the hand)
   const sling = lvl === 1 || lvl === 3 || lvl === 4, crutch = lvl === 2 || lvl === 3, chair = lvl >= 4;
   let ox = S.dx || 0, oy = S.dy || 0;
   const lift = chair ? (Math.max(0, -(S.air || 0)) >> 1) + (S.dy && !S.air && anim === 'hands' ? 1 : 0) : 0;   // a wheelie: the whole chair bounces up
@@ -58,7 +60,7 @@ export function podFigure(anim, t, head, lvl = 0) {
     for (const wx of [-2, 9]) for (let y = 1; y <= 9; y++) for (const dx of [0, 1]) put(cx + wx + dx, y - lift, (y === 1 || y === 9) ? 'Y' : dx === (wx < 0 ? 1 : 0) ? 'y' : 'Y');
     for (const hx of [-1, 9]) { put(cx + hx, -2 - lift, 'V'); put(cx + hx, -1 - lift, 'V'); }
   }
-  ['.ssSSSss.', '.sssssss.', '.SsssssS.', '.sssssss.', '.sSSSSSs.', '.PpPpPpP.'].forEach((r, y) => { for (let x = 0; x < 9; x++) if (r[x] !== '.') put(ox + x, oy + y, r[x]); });
+  B.rows.forEach((r, y) => { for (let x = 0; x < 9; x++) if (r[x] !== '.') put(ox + x, oy + y, r[x]); });
   if (chair) {                                                      // seat edge, both legs in casts down to the footrest
     for (let x = 0; x <= 8; x++) put(ox + x, oy + 6, 'V');
     for (const lx of [2, 5]) { put(ox + lx, oy + 6, 'W'); put(ox + lx + 1, oy + 6, 'w'); put(ox + lx, oy + 7, 'W'); put(ox + lx + 1, oy + 7, 'w'); }
@@ -83,8 +85,9 @@ export function podFigure(anim, t, head, lvl = 0) {
     handsTop = Math.min(handsTop, oy + h[1]);
     return { pts: seg(s0, e).concat(seg(e, h).slice(1)), hand: [ox + h[0], oy + h[1]], side }; };
   const drawArm = (a) => {
-    a.pts.forEach(([x, y, vert], k) => put(vert ? x + a.side : x, vert ? y : y + 1, k <= 1 ? 'S' : 'j'));   // the second pixel: outside a hanging arm, under a level one
-    a.pts.forEach(([x, y], k) => put(x, y, k <= 1 ? 's' : 'i'));
+    const shirt = (k) => sleeve ? k < a.pts.length - 1 : k <= 1;
+    a.pts.forEach(([x, y, vert], k) => put(vert ? x + a.side : x, vert ? y : y + 1, shirt(k) ? 'S' : 'j'));   // the second pixel: outside a hanging arm, under a level one
+    a.pts.forEach(([x, y], k) => put(x, y, shirt(k) ? 's' : 'i'));
   };
   const plantCrutch = (side) => { const up = S.clap && side > 0 ? 2 : 0, x = (side < 0 ? ox - 2 : ox + 10) + (up ? 1 : 0);   // second place on a crutch taps it on the ground instead of clapping
     put(x - 1, oy + 1, 'k'); put(x, oy + 1, 'k'); put(x + 1, oy + 1, 'k'); for (let y = oy + 2; y <= 9 - up; y++) put(x, y, y >= 9 - up ? 'k' : 'K');
@@ -96,9 +99,11 @@ export function podFigure(anim, t, head, lvl = 0) {
     for (const [x, y] of [[5, 3], [6, 2], [7, 1], [6, 0], [5, -1]]) put(ox + x, oy + y, 'L');
   };
   const props = [];
+  // crossed arms: forearms across the chest, ending in the hands (in long sleeves only the hands show skin)
+  const crossArms = (pts, hands) => { for (const [x, y, c] of pts) put(ox + x, oy + y, sleeve && !hands.some(([hx, hy]) => hx === x && hy === y) ? (c === 'i' ? 's' : c === 'j' ? 'S' : c) : c); };
   if (S.crossed) {
-    if (sling) { drawSling(); for (const [x, y, c] of [[8, 1, 's'], [8, 2, 'S'], [7, 3, 'i'], [6, 3, 'i'], [5, 3, 'i'], [4, 3, 'i'], [3, 3, 'i']]) put(ox + x, oy + y, c); }
-    else for (const [x, y, c] of [[0, 1, 's'], [0, 2, 's'], [0, 3, 'S'], [1, 3, 'j'], [2, 3, 'j'], [3, 3, 'j'], [4, 3, 'j'], [5, 3, 'j'], [6, 3, 'j'], [7, 3, 'j'], [8, 1, 's'], [8, 2, 'S'], [7, 2, 'i'], [6, 2, 'i'], [5, 2, 'i'], [4, 2, 'i'], [3, 2, 'i'], [2, 2, 'i'], [1, 2, 'i']]) put(ox + x, oy + y, c);
+    if (sling) { drawSling(); crossArms([[8, 1, 's'], [8, 2, 'S'], [7, 3, 'i'], [6, 3, 'i'], [5, 3, 'i'], [4, 3, 'i'], [3, 3, 'i']], [[3, 3]]); }
+    else crossArms([[0, 1, 's'], [0, 2, 's'], [0, 3, 'S'], [1, 3, 'j'], [2, 3, 'j'], [3, 3, 'j'], [4, 3, 'j'], [5, 3, 'j'], [6, 3, 'j'], [7, 3, 'j'], [8, 1, 's'], [8, 2, 'S'], [7, 2, 'i'], [6, 2, 'i'], [5, 2, 'i'], [4, 2, 'i'], [3, 2, 'i'], [2, 2, 'i'], [1, 2, 'i']], [[7, 3], [1, 2]]);
     if (crutch) { const x = ox + 10; put(x - 1, oy + 1, 'k'); put(x, oy + 1, 'k'); for (let y = oy + 2; y <= 9; y++) put(x, y, 'K'); }   // the crutch tucked under his arm
   } else {
     const free = [['L', -1], ['R', 1]].filter(([k]) => !(k === 'L' && sling));
@@ -129,10 +134,10 @@ export function podFigure(anim, t, head, lvl = 0) {
 // other sprite. Drawn with its body's top left at (x, y). Frames repeat, so they are cached per look.
 const podCache = new Map();
 export function drawPodFigure(anim, t, head, lvl, th, x, y) {
-  const T = KTHEMES[th] || {}, key = anim + '|' + t + '|' + head + '|' + lvl + '|' + th + '|' + Object.values(T).join(',');
+  const T = KTHEMES[th] || {}, body = T.body || 'rider', key = anim + '|' + t + '|' + head + '|' + lvl + '|' + th + '|' + Object.values(T).join(',');
   let c = podCache.get(key);
   if (!c) {
-    const fig = podFigure(anim, t, head, lvl); let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    const fig = podFigure(anim, t, head, lvl, body); let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
     for (const k of fig.keys()) { const [fx, fy] = k.split(',').map(Number); x0 = Math.min(x0, fx); y0 = Math.min(y0, fy); x1 = Math.max(x1, fx); y1 = Math.max(y1, fy); }
     const base = document.createElement('canvas'); base.width = (x1 - x0 + 3) * 2; base.height = (y1 - y0 + 3) * 2; base.ax = 0; base.ay = 0;
     const g = base.getContext('2d');

@@ -10,7 +10,8 @@ import { rect, text, wsx } from '../gfx/pixel.js';
 import { bikeBase, kBikeGrid, kCol, kPaintHead } from '../gfx/riderSprites.js';
 import { BROWS, CELL_M, MIN_LEN, PIECES, TB_COLS, TB_Y, TOOLS, TOOL_W, cellM, ed, editMax, lanesOf, loopSpan, slotSel, slots, tplFeat, viewLift } from './builder.js';
 import { fmtTime } from '../race/play.js';
-import { LOOK_HEADS, LOOK_ROWS, look, lookLabel } from '../race/playerLook.js';
+import { FRONT_BODY } from '../art/bodies.js';
+import { LOOK_BODIES, LOOK_HEADS, LOOK_ROWS, LP_DY, LP_Y0, look, lookLabel } from '../race/playerLook.js';
 import { dim } from '../ui/overlay.js';
 import { drawPodFigure } from '../ui/podium.js';
 import { RSROWS } from '../ui/title.js';
@@ -122,14 +123,15 @@ export function drawBuilderOverlay() {
     rect(16, 61, W - 32, 88, '#14208a'); rect(16, 61, W - 32, 1, P.white); rect(16, 148, W - 32, 1, P.white);
     const px1 = (x0, y0) => (x, y, c) => { ctx.fillStyle = c; ctx.fillRect(x0 + x, y0 + y, 1, 1); };   // thumbnails: one pixel per Kenney pixel
     [...LOOK_ROWS, ['BACK TO MENU']].forEach((r, i) => {
-      const [, k, list, kind] = r, y = 64 + i * 10.5 | 0, on = i === menu.lpRow;
-      if (on) { rect(20, y - 1, W - 40, 10, '#2d46d6'); rect(20, y - 1, 2, 10, P.turbo); }
+      const [, k, list, kind] = r, y = LP_Y0 + i * LP_DY | 0, on = i === menu.lpRow;
+      if (on) { rect(20, y - 1, W - 40, 9, '#2d46d6'); rect(20, y - 1, 2, 9, P.turbo); }
       if (!k) { text(r[0], W / 2, y + 1, on ? P.turbo : P.muted, 1, 'center'); return; }
       text(lookLabel(r), 28, y + 1, on ? P.turbo : P.muted);
       const sx = W - 60, cy = y + 4;                                   // the choice, centred in a 20 x 8 box
       if (kind === 'col') {
         const c = list[look[k]];
         rect(sx - 1, y, 22, 9, on ? P.white : P.white); rect(sx, y + 1, 10, 7, c[0]); rect(sx + 10, y + 1, 10, 7, c[1]); }
+      else if (kind === 'body') { FRONT_BODY[LOOK_BODIES[look.body]].rows.forEach((row, yy) => { for (let xx = 0; xx < row.length; xx++) if (row[xx] !== '.') { ctx.fillStyle = kCol(row[xx], 0); ctx.fillRect(sx + 6 + xx, y + 1 + yy, 1, 1); } }); }   // the torso, facing us
       else if (kind === 'head') { const H = K_HEADS[LOOK_HEADS[look.head]], z = H.art.length > 6 ? 1 : 2, x0 = sx + 10 - Math.round(z * H.art[0].length / 2), y0 = y + 9 - z * H.art.length; kPaintHead((x, yy, c) => { ctx.fillStyle = c; ctx.fillRect(x0 + z * x, y0 + z * yy, z, z); }, LOOK_HEADS[look.head], 0, 0, 0); }   // heads at game size (the tall ones at half, to fit the row)
       else { const B = K_BIKES[look.bikeType], gr = kBikeGrid(0, 0, 0), w = gr[0].length; let top = 0; while (top < gr.length && gr[top].every(c => c === '.')) top++;
         const put = px1(sx + 10 - (w >> 1), y + 8 - gr.length + 1); gr.forEach((row, yy) => row.forEach((ch, xx) => { if (ch !== '.') put(xx, yy, kCol(ch, 0)); })); }
