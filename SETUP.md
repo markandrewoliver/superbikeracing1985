@@ -53,15 +53,25 @@ You must be a **moderator** of r/decyphergame_dev. Devvit only installs on a
 subreddit you moderate, and only moderators see the menu that makes the post.
 A small private subreddit is ideal.
 
-## 4. First run: install and make a post
+## 4. First run: register, install and make a post
 
 ```bash
-npm run dev        # = devvit playtest: builds, uploads, installs on r/decyphergame_dev
+npm run build      # makes dist/; every devvit command checks devvit.json against it
+npx devvit init    # once: registers the app with Reddit, in the browser
+npm run dev        # = devvit playtest: uploads and installs on r/decyphergame_dev
 ```
 
-Leave it running while you test: it streams the app's logs. (If a code change
-does not show up in the post, run `npm run build` and reload.) Then, on
-reddit.com:
+- **Build first.** On a fresh copy, `devvit` refuses with "Your devvit.json
+  references files that don't exist" until `dist/` is there.
+- **`devvit init`** opens Reddit's app-creation page. Give it the name from
+  step 2 exactly, and let it initialize this folder (no template, no new
+  folder). Then run `git diff devvit.json package.json` and look at what it
+  changed before committing anything.
+- Without `init`, playtest stops with "Your app doesn't exist yet".
+
+Leave `npm run dev` running while you test: it streams the app's logs. (If a
+code change does not show up in the post, run `npm run build` and reload.)
+Then, on reddit.com:
 
 1. Open r/decyphergame_dev.
 2. Open the subreddit's **⋯ (mod) menu** and choose **Create a post**.
