@@ -1,7 +1,7 @@
 // The title screen: building up the title picture, and the menu layout.
 
-import { loadImg } from '../art/assets.js';
-import { SPLASH_ART } from '../art/splash.js';
+import { imgsReady } from '../art/assets.js';
+import { SPLASH_ART, splashImg } from '../art/splash.js';
 import { EXTRA, ctx, cv } from '../core/canvas.js';
 import { W } from '../core/config.js';
 import { ATT, game, menu } from '../core/state.js';
@@ -10,9 +10,10 @@ import { imgOk } from '../gfx/backdrop.js';
 import { rotSprite } from '../gfx/pixel.js';
 
 const SPLASH_W = 120, SPLASH_H = 155;                              // the picture's own pixels; each is 2 screen pixels at full size
-export const splashImg = {}, splashWhite = {};
-for (const k in SPLASH_ART) { if (typeof Image === 'undefined') break; splashImg[k] = loadImg(SPLASH_ART[k]); }
+export { splashImg };
+export const splashWhite = {};
 export const SPLASH_T = { draw: [0.3, 1.3], rider: [1.7, 2.4], bike: [1.7, 2.25], sup: [2.3, 2.85], year: [2.9, 3.45] };   // seconds
+export const splashReady = () => imgsReady(Object.values(splashImg));   // (the title needs only its own picture)
 export const splashOk = () => { for (const k in SPLASH_ART) if (!imgOk(splashImg[k])) return false; return true; };
 // The rider leaping through the sun, through RotSprite like every other sprite (upright: the lean is in the art),
 // at the screen's 240x310. Made once, after the picture has loaded.

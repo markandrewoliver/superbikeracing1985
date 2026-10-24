@@ -134,6 +134,15 @@ game page fits at 320×568, 375×667, 390×844, 844×390, 700×512, 900×600,
     a click on the screen is a press. The bezel fills the window and the
     screen sits in it as large as it fits, with the bezel's edge showing.
   - `handheld`: `game.html` on a phone. The original handheld with its D-pad.
+- **The inline splash does not measure the visible height.** Inline, the
+  frame is the post, and the measure reads how much of the post is still on
+  screen as the feed scrolls, which slid the splash about. `App.tsx` skips it
+  for an inline race post; `fitRoom()` uses the frame's height there.
+- **The splash starts on the title's own five pictures** (`art/splash.js`,
+  loaded first and at high priority; the rest asks for low). The rest of the
+  art arrives while the title plays; if it has not when the title is due to
+  end, the rider hangs in the sun until it has (`TITLE_HOLD` in
+  `attract/attract.js`, `game.artIn`). The game page still waits for all of it.
 - **`game.html` sizes to what is really on screen.** It runs the template's
   `trackVisibleHeight()` (`lib/visibleHeight.ts`, doc 01), which measures the
   frame against the top-level viewport and keeps `--vis-h` current as a

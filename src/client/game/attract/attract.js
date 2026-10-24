@@ -150,10 +150,12 @@ export function attGo(i) {
   wideScene(S);                                                    // (a wide splash picks the canvas's shape before the scene frames itself)
   S.setup();
 }
+const TITLE_HOLD = 5;                                                   // s: the title's last moment before the rider shoots off
 export function frameTick(dt) {                                         // one fixed step: the game, or the intro video driving it
   if (!ATT.on) return tick(dt);
   const S = ATT_SCENES[ATT.scene];
   ATT.t += dt;
+  if (S.name === 'title' && !game.artIn) ATT.t = Math.min(ATT.t, TITLE_HOLD);   // (the rest of the art is still on its way: the rider hangs in the sun until it lands)
   if (ATT.band >= 0) { ATT.band += dt; if (ATT.band > 2 * BAND) ATT.band = -1; }
   if (S.step) S.step(ATT.t, dt);
   puppetPre(); pilotPre(dt);

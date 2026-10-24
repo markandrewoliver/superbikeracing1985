@@ -51,7 +51,7 @@ export function setTallRoom(on) { if (on !== tallRoom) { tallRoom = on; fitScree
 // Sky rows that would match a room of w x h: 160 (all of them) for anything as tall as the title picture or taller.
 export const roomExtra = (w, h) => clamp(Math.floor(h * 240 / w) - 150, 0, 160);
 function fitRoom() {
-  const edge = ROOM_EDGE[HOST] || 0, w = window.innerWidth - 2 * edge, h = visibleHeight() - 2 * edge;
+  const edge = ROOM_EDGE[HOST] || 0, w = window.innerWidth - 2 * edge, h = (HOST === 'splash' ? window.innerHeight : visibleHeight()) - 2 * edge;   // (inline, the frame is the post)
   if (w <= 0 || h <= 0) return;
   const ex = tallRoom ? 160 : roomExtra(w, h);
   if (ex !== EXTRA) { EXTRA = ex; cv.height = 150 + ex; ctx.imageSmoothingEnabled = false; }

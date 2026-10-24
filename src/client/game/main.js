@@ -1,5 +1,6 @@
 // Entry point: loads every module in the original's order, then runs the frame loop.
 
+import './art/splash.js';                                         // (first: the title picture is the first art to load)
 import './core/state.js';
 import './core/config.js';
 import './core/canvas.js';
@@ -60,6 +61,7 @@ import { presentSplash } from './attract/wide.js';
 import { HOST } from './core/host.js';
 import { game, menu } from './core/state.js';
 import { mountCrt } from './ui/crt.js';
+import { splashReady } from './ui/title.js';
 import { VIS_H_EVENT, trackVisibleHeight } from '../lib/visibleHeight';
 
 if (HOST !== 'splash') mountCrt(document.querySelector('.screen'));   // (the splash is under the app's glass)
@@ -79,8 +81,10 @@ function frame(ts) {
   requestAnimationFrame(frame);
 }
 // The inline splash plays the intro video; the game page (opened from it) starts on the title menu, as a press
-// during the video would. Either way, once all the art has arrived.
-assetsReady().then(() => {
+// during the video would. The game page waits for all the art. The splash starts as soon as the title picture is
+// in, and the rest arrives while the title plays (the title holds until it has: attract.js, frameTick).
+const allIn = assetsReady().then(() => { game.artIn = true; });
+(HOST === 'splash' ? splashReady() : allIn).then(() => {
   if (HOST === 'splash') attStart(); else { menu.titleMenu = true; menu.titleSeen = true; }
   requestAnimationFrame(frame);
 });

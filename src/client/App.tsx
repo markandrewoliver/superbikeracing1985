@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { CrtScreen } from "./components/CrtScreen";
 import { ExampleApp } from "./ExampleApp";
 import { RaceSplash } from "./RaceSplash";
-import { expandOnTap, postKind } from "./lib/devvit";
+import { expandOnTap, postKind, webViewMode } from "./lib/devvit";
 import { trackVisibleHeight } from "./lib/visibleHeight";
 
 /**
@@ -21,9 +21,14 @@ import { trackVisibleHeight } from "./lib/visibleHeight";
  * as it covers any post; game.html lays its own over the game's screen.
  */
 export function App() {
-  useEffect(() => trackVisibleHeight(), []);
-
   const kind = postKind();
+  // Not under the race splash: inline, the frame IS the post, and the measure
+  // would read how much of the post is still on screen as it scrolls past,
+  // shrinking the splash with it (it slid about and the edge crept in). The
+  // game it opens is a page of its own, which measures for itself.
+  const measure = !(kind === "race" && webViewMode() === "inline");
+  useEffect(() => (measure ? trackVisibleHeight() : undefined), [measure]);
+
   // Post kinds that should stay inline (read-only reports, or anything typed
   // on the OS keyboard) leave this out. See docs/02-devices-and-input.md.
   const inlineOnly = kind === "race";
